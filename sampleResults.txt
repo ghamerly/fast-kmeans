@@ -1,0 +1,5 @@
+algorithm	iters	   seconds	      MB
+adaptive 	  133	     0.855	     4.5	
+hamerly  	  133	     0.801	     2.0	
+elkan    	  133	     2.155	     9.6	
+lloyd    	  133	     2.405	     1.9	

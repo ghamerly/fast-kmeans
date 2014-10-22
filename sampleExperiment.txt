@@ -1,0 +1,23 @@
+dataset smallDataset.txt
+
+initialize 10 kpp
+
+threads 1
+elkan
+annulus
+hamerly
+
+threads 2
+elkan
+annulus
+hamerly
+
+threads 4
+elkan
+annulus
+hamerly
+
+threads 8
+elkan
+annulus
+hamerly
