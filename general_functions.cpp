@@ -248,13 +248,16 @@ double getMemoryUsage() {
     unsigned int totalProgramSizeInPages = 0;
     unsigned int residentSetSizeInPages = 0;
     if (pf) {
-        fscanf(pf, "%u %u" /* %u %u %u %u %u"*/, &totalProgramSizeInPages, &residentSetSizeInPages);
+        int numScanned = fscanf(pf, "%u %u" /* %u %u %u %u %u"*/, &totalProgramSizeInPages, &residentSetSizeInPages);
+        if (numScanned != 2) {
+            return 0.0;
+        }
     }
     
     fclose(pf);
     pf = NULL;
     
-    double sizeInKilobytes = residentSetSizeInPages << 2; // assumes 4096 byte page
+    double sizeInKilobytes = residentSetSizeInPages * 4.0; // assumes 4096 byte page
     // getconf PAGESIZE
     
     return sizeInKilobytes;
