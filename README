@@ -7,7 +7,7 @@ Version 0.1 (Sat May 17 17:41:11 CDT 2014)
     - Initial release.
 
 ----------------------
-WHAT: 
+WHAT:
 This software is a testbed for comparing variants of Lloyd's k-means clustering
 algorithm.  It includes implementations of several algorithms that accelerate
 the algorithm by avoiding unnecessary distance calculations.
@@ -58,7 +58,7 @@ algorithm multiple times will use the same initialization each time.
 Here is an example of a simple set of commands:
 
     dataset smallDataset.txt
-    initialize kpp
+    initialize 10 kpp
 
     annulus
     hamerly
