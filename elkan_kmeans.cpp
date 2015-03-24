@@ -12,7 +12,7 @@ void ElkanKmeans::update_center_dists(int threadId) {
     // find the inter-center distances
     for (int c1 = 0; c1 < k; ++c1) {
         if (c1 % numThreads == threadId) {
-            centerCenterDistDiv2[c1 * k + c1] = s[c1] = std::numeric_limits<double>::max();
+            s[c1] = std::numeric_limits<double>::max();
 
             for (int c2 = 0; c2 < k; ++c2) {
                 // divide by 2 here since we always use the inter-center
