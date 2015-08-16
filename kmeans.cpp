@@ -13,6 +13,9 @@ Kmeans::Kmeans() : x(NULL), n(0), k(0), d(0), numThreads(0), converged(false),
     clusterSize(NULL), centerMovement(NULL), assignment(NULL) {
     #ifdef COUNT_DISTANCES
     numDistances = 0;
+    numInnerProducts = 0;
+	assignmentChanges = 0;
+    boundsUpdates = 0.0;
     #endif
 }
 
@@ -61,10 +64,16 @@ void Kmeans::initialize(Dataset const *aX, unsigned short aK, unsigned short *in
 
     #ifdef COUNT_DISTANCES
     numDistances = 0;
+    numInnerProducts = 0;
+	assignmentChanges = 0;
+    boundsUpdates = 0.0;
     #endif
 }
 
 void Kmeans::changeAssignment(int xIndex, int closestCluster, int threadId) {
+    #ifdef COUNT_DISTANCES
+    ++assignmentChanges;
+    #endif
     --clusterSize[threadId][assignment[xIndex]];
     ++clusterSize[threadId][closestCluster];
     assignment[xIndex] = closestCluster;

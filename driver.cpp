@@ -38,6 +38,7 @@
 
 #include "dataset.h"
 #include "general_functions.h"
+#include "stats_functions.h"
 #include "hamerly_kmeans.h"
 #include "annulus_kmeans.h"
 #include "drake_kmeans.h"
@@ -60,7 +61,7 @@
 #include <unistd.h>
 #include <cstdlib>
 
-void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned short k, unsigned short const *assignment,
+eval_result* execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned short k, unsigned short const *assignment,
         int xcNdx, int numThreads, int maxIterations,
         std::vector<int> *numItersHistory
         #ifdef MONITOR_ACCURACY
@@ -85,21 +86,10 @@ int main(int argc, char **argv) {
 
     int numThreads = 1;
     int maxIterations = std::numeric_limits<int>::max();
+	int repeats = 1;
 
     // Print header row
-    std::cout << std::setw(35) << "algorithm" << "\t"
-              << std::setw(5) << "iters" << "\t"
-              << std::setw(10) << "numThreads" << "\t"
-              << std::setw(10) << "cpu_secs" << "\t"
-              << std::setw(10) << "wall_secs" << "\t"
-              << std::setw(8) << "MB"
-              #ifdef MONITOR_ACCURACY
-              << "\t" << std::setw(8) << "sse"
-              #endif
-              #ifdef COUNT_DISTANCES
-              << "\t" << std::setw(11) << "#distances"
-              #endif
-              << std::endl;
+    print_header_row();
 
     // Read the command file
     for (std::string command; std::cin >> command; ) {
@@ -116,6 +106,8 @@ int main(int argc, char **argv) {
             if (maxIterations < 0) {
                 maxIterations = std::numeric_limits<int>::max();
             }
+        } else if (command == "repeats") {
+            std::cin >> repeats;
         } else if (command == "dataset" || command == "data") {
             xcNdx++;
 
@@ -258,13 +250,36 @@ int main(int argc, char **argv) {
         }
 
         if (algorithm) {
-            execute(command, algorithm, x, k, assignment, xcNdx, numThreads, maxIterations, &numItersHistory
-                    #ifdef MONITOR_ACCURACY
-                    , &sseHistory
-                    #endif
-                   );
+            if (repeats <= 1) {
+                execute(command, algorithm, x, k, assignment, xcNdx, numThreads, maxIterations, &numItersHistory
+                        #ifdef MONITOR_ACCURACY
+                        , &sseHistory
+                        #endif
+                        );
+            } else {
+                std::vector<eval_result*> results;
+                bool valid = true;
+                for (int i = 0; i < repeats; ++i) {
+                    eval_result* result = execute(command, algorithm, x, k, assignment, xcNdx, numThreads, maxIterations, &numItersHistory
+                            #ifdef MONITOR_ACCURACY
+                            , &sseHistory
+                            #endif
+                            );
+                    if (result == NULL) {
+                        valid = false;
+                        break;
+                    }
+					results.push_back(result);
+				}
+				if(valid) {
+					print_summary(&results);
+				}
+				for(unsigned i = 0; i < results.size(); ++i)
+					delete results.at(i);
+			}
             delete algorithm;
             algorithm = NULL;
+
         }
     }
 
@@ -322,11 +337,11 @@ double elapsed_time(rusage *start) {
     return (double)diff.tv_sec + (double)diff.tv_usec / 1e6;
 }
 
-void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned short k, unsigned short const *assignment,
-        int xcNdx,
-        int numThreads,
-        int maxIterations,
-        std::vector<int> *numItersHistory
+eval_result* execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned short k, unsigned short const *assignment,
+                     int xcNdx,
+                     int numThreads,
+                     int maxIterations,
+                     std::vector<int> *numItersHistory
         #ifdef MONITOR_ACCURACY
         , std::vector<double> *sseHistory
         #endif
@@ -334,11 +349,11 @@ void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned 
     // Check for missing initialization
     if (assignment == NULL) {
         std::cerr << "initialize centers first!" << std::endl;
-        return;
+        return NULL;
     }
     if (x == NULL) {
         std::cerr << "load a dataset first!\n" << std::endl;
-        return;
+        return NULL;
     }
 
     #ifdef COUNT_DISTANCES
@@ -356,30 +371,31 @@ void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned 
     unsigned short *workingAssignment = new unsigned short[x->n];
     std::copy(assignment, assignment + x->n, workingAssignment);
 
+    // here we will store the result of the run
+    eval_result* run_result = new eval_result();
+    run_result->num_threads = numThreads;
+
     // Time the execution and get the number of iterations
     rusage start_clustering_time = get_time();
     double start_clustering_wall_time = get_wall_time();
     algorithm->initialize(x, k, workingAssignment, numThreads);
-    int iterations = algorithm->run(maxIterations);
+    run_result->iterations = algorithm->run(maxIterations);
     #ifdef COUNT_DISTANCES
-    long long numDistances = algorithm->numDistances;
+    run_result->num_distances = algorithm->numDistances;
+    run_result->inner_products = algorithm->numInnerProducts;
+    run_result->assignment_changes = algorithm->assignmentChanges;
+    run_result->bounds_updates = algorithm->boundsUpdates;
     #endif
-    double cluster_time = elapsed_time(&start_clustering_time);
-    double cluster_wall_time = get_wall_time() - start_clustering_wall_time;
+    run_result->cluster_time = elapsed_time(&start_clustering_time);
+    run_result->cluster_wall_time = get_wall_time() - start_clustering_wall_time;
+    run_result->memory_usage = getMemoryUsage() / 1024.0;
 
-    // Report results
-    std::cout << std::setw(5) << iterations << "\t";
-    std::cout << std::setw(10) << numThreads << "\t";
-    std::cout << std::setw(10) << cluster_time << "\t";
-    std::cout << std::setw(10) << cluster_wall_time << "\t";
-    std::cout << std::setw(8) << (getMemoryUsage() / 1024.0); // from kilo to mega
     #ifdef MONITOR_ACCURACY
     {
-        double sse = algorithm->getSSE();
-        std::cout << "\t" << std::setw(11) << sse;
+        run_result->sse = algorithm->getSSE();
 
         // verification that we get the same distortion with different algorithms
-        while (sseHistory->size() <= (size_t)xcNdx) {
+        while (sseHistory->size() <= (size_t) xcNdx) {
             sseHistory->push_back(sse);
         }
         if (sse != sseHistory->back()) {
@@ -387,22 +403,25 @@ void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned 
         }
     }
     #endif
-    #ifdef COUNT_DISTANCES
-    {
-        std::cout << "\t" << std::setw(11) << numDistances;
-    }
-    #endif
+
+    // output the result
+    print_result(run_result);
 
     // verification that we get the same number of iterations with different algorithms
-    while (numItersHistory->size() <= (size_t)xcNdx) {
-        numItersHistory->push_back(iterations);
+    while (numItersHistory->size() <= (size_t) xcNdx) {
+        numItersHistory->push_back(run_result->iterations);
     }
-    if (iterations != numItersHistory->back()) {
-        std::cerr << "ERROR: iterations = " << iterations << " but last iterations was " << numItersHistory->back() << std::endl;
+    if (run_result->iterations != numItersHistory->back()) {
+        std::cerr << "ERROR: iterations = " << run_result->iterations << " but last iterations was " << numItersHistory->back() << std::endl;
     }
 
     std::cout << std::endl;
 
+    #ifdef ITERATION_STATS
+    print_iteration_stats(&(algorithm->stats));
+    #endif
+
     delete [] workingAssignment;
+    return run_result;
 }
 
