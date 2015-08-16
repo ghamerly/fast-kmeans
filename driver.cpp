@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
             if (method == "kpp" || method == "kmeansplusplus") {
                 // Perform k-means++ initialization
                 std::cout << "initializing with kmeans++: k = " << k << std::endl;
-                c = init_centers_kmeanspp_v2(*x, k);
+                c = init_centers_kmeanspp(*x, k);
             } else if (method == "random") {
                 // Perform random initialization
                 std::cout << "initializing with random:  k = " << k << std::endl;

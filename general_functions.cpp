@@ -39,7 +39,6 @@ double distance2silent(double const *a, double const *b, int d) {
     return d2;
 }
 
-
 void centerDataset(Dataset *x) {
     double *xCentroid = new double[x->d];
 
@@ -55,7 +54,7 @@ void centerDataset(Dataset *x) {
     for (int d = 0; d < x->d; ++d) {
         xCentroid[d] /= x->n;
     }
-    
+
     // re-center the dataset
     const double *xEnd = x->data + x->n * x->d;
     for (double *xp = x->data; xp != xEnd; xp += x->d) {
@@ -79,7 +78,7 @@ Dataset *init_centers(Dataset const &x, unsigned short k) {
                     break;
                 }
             }
-        } while (! acceptable);
+        } while (!acceptable);
         double *cdp = c->data + i * x.d;
         memcpy(cdp, x.data + chosen_pts[i] * x.d, sizeof(double) * x.d);
         if (c->sumDataSquared) {
@@ -91,90 +90,18 @@ Dataset *init_centers(Dataset const &x, unsigned short k) {
 
     return c;
 }
-
 
 Dataset *init_centers_kmeanspp(Dataset const &x, unsigned short k) {
     int *chosen_pts = new int[k];
-    std::pair<double, int> *dist2 = new std::pair<double, int>[x.n];
-    double *distribution = new double[x.n];
+    double *dist2 = new double[x.n];
+    int *closest = new int[x.n]; // index of centroid that is closest to a point
+    // distances between new centroid and all others divided by 2
+    double *centroid_dist2_div4 = new double[k - 1];
 
     // initialize dist2
-    for (int i = 0; i < x.n; ++i) {
-        dist2[i].first = std::numeric_limits<double>::max();
-        dist2[i].second = i;
-    }
-
-    // choose the first point randomly
-    int ndx = 1;
-    chosen_pts[ndx - 1] = rand() % x.n;
-
-    while (ndx < k) {
-        double sum_distribution = 0.0;
-        // look for the point that is furthest from any center
-        for (int i = 0; i < x.n; ++i) {
-            int example = dist2[i].second;
-            double d2 = 0.0, diff;
-            for (int j = 0; j < x.d; ++j) {
-                diff = x(example,j) - x(chosen_pts[ndx - 1],j);
-                d2 += diff * diff;
-            }
-            if (d2 < dist2[i].first) {
-                dist2[i].first = d2;
-            }
-
-            sum_distribution += dist2[i].first;
-        }
-
-        // sort the examples by their distance from centers
-        sort(dist2, dist2 + x.n);
-
-        // turn distribution into a CDF
-        distribution[0] = dist2[0].first / sum_distribution;
-        for (int i = 1; i < x.n; ++i) {
-            distribution[i] = distribution[i - 1] + dist2[i].first / sum_distribution;
-        }
-
-        // choose a random interval according to the new distribution
-        double r = (double)rand() / (double)RAND_MAX;
-        double *new_center_ptr = std::lower_bound(distribution, distribution + x.n, r);
-        int distribution_ndx = (int)(new_center_ptr - distribution);
-        chosen_pts[ndx] = dist2[distribution_ndx].second;
-        /*
-        cout << "chose " << distribution_ndx << " which is actually " 
-             << chosen_pts[ndx] << " with distance " 
-             << dist2[distribution_ndx].first << std::endl;
-             */
-
-        ++ndx;
-    }
-
-    Dataset *c = new Dataset(k, x.d);
-
-    for (int i = 0; i < k; ++i) {
-        double *cdp = c->data + i * x.d;
-        memcpy(cdp, x.data + chosen_pts[i] * x.d, sizeof(double) * x.d);
-        if (c->sumDataSquared) {
-            c->sumDataSquared[i] = std::inner_product(cdp, cdp + x.d, cdp, 0.0);
-        }
-    }
-
-    delete [] chosen_pts;
-    delete [] dist2;
-    delete [] distribution;
-
-    return c;
-}
-
-
-Dataset *init_centers_kmeanspp_v2(Dataset const &x, unsigned short k) {
-    int *chosen_pts = new int[k];
-    std::pair<double, int> *dist2 = new std::pair<double, int>[x.n];
-
-    // initialize dist2
-    for (int i = 0; i < x.n; ++i) {
-        dist2[i].first = std::numeric_limits<double>::max();
-        dist2[i].second = i;
-    }
+    std::fill(dist2, dist2 + x.n, std::numeric_limits<double>::max());
+    std::fill(closest, closest + x.n, 0);
+    std::fill(centroid_dist2_div4, centroid_dist2_div4 + k - 1, 0.0);
 
     // choose the first point randomly
     int ndx = 1;
@@ -185,39 +112,44 @@ Dataset *init_centers_kmeanspp_v2(Dataset const &x, unsigned short k) {
         // look for the point that is furthest from any center
         double max_dist = 0.0;
         for (int i = 0; i < x.n; ++i) {
-            int example = dist2[i].second;
-            double d2 = 0.0, diff;
-            for (int j = 0; j < x.d; ++j) {
-                diff = x(example,j) - x(chosen_pts[ndx - 1],j);
-                d2 += diff * diff;
-            }
-            if (d2 < dist2[i].first) {
-                dist2[i].first = d2;
+            // we need to consider the new centroid (ndx) as closest to i
+            if (dist2[i] > centroid_dist2_div4[closest[i]]) {
+                double d2 = distance2silent(x.data + i * x.d, x.data + chosen_pts[ndx - 1] * x.d, x.d);
+
+                if (d2 < dist2[i]) {
+                    dist2[i] = d2;
+                    closest[i] = ndx - 1;
+                }
             }
 
-            if (dist2[i].first > max_dist) {
-                max_dist = dist2[i].first;
+            if (dist2[i] > max_dist) {
+                max_dist = dist2[i];
             }
 
-            sum_distribution += dist2[i].first;
+            sum_distribution += dist2[i];
         }
 
         bool unique = true;
 
         do {
             // choose a random interval according to the new distribution
-            double r = sum_distribution * (double)rand() / (double)RAND_MAX;
-            double sum_cdf = dist2[0].first;
+            double r = sum_distribution * (double) rand() / (double) RAND_MAX;
+            double sum_cdf = dist2[0];
             int cdf_ndx = 0;
             while (sum_cdf < r) {
-                sum_cdf += dist2[++cdf_ndx].first;
+                sum_cdf += dist2[++cdf_ndx];
             }
             chosen_pts[ndx] = cdf_ndx;
 
             for (int i = 0; i < ndx; ++i) {
                 unique = unique && (chosen_pts[ndx] != chosen_pts[i]);
             }
-        } while (! unique);
+        } while (!unique);
+
+        // calculate the squared distance between the new point and all others div 4
+        for (int i = 0; i < ndx; ++i) {
+            centroid_dist2_div4[i] = distance2silent(x.data + chosen_pts[i] * x.d, x.data + chosen_pts[ndx] * x.d, x.d) / 4.0;
+        }
 
         ++ndx;
     }
@@ -237,13 +169,12 @@ Dataset *init_centers_kmeanspp_v2(Dataset const &x, unsigned short k) {
     return c;
 }
 
-
 /**
  * in MB
  */
 double getMemoryUsage() {
     char buf[30];
-    snprintf(buf, 30, "/proc/%u/statm", (unsigned)getpid());
+    snprintf(buf, 30, "/proc/%u/statm", (unsigned) getpid());
     FILE* pf = fopen(buf, "r");
     unsigned int totalProgramSizeInPages = 0;
     unsigned int residentSetSizeInPages = 0;
@@ -253,16 +184,15 @@ double getMemoryUsage() {
             return 0.0;
         }
     }
-    
+
     fclose(pf);
     pf = NULL;
-    
+
     double sizeInKilobytes = residentSetSizeInPages * 4.0; // assumes 4096 byte page
     // getconf PAGESIZE
-    
+
     return sizeInKilobytes;
 }
-
 
 void assign(Dataset const &x, Dataset const &c, unsigned short *assignment) {
     for (int i = 0; i < x.n; ++i) {
