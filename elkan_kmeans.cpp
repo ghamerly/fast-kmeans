@@ -15,12 +15,16 @@ void ElkanKmeans::update_center_dists(int threadId) {
             s[c1] = std::numeric_limits<double>::max();
 
             for (int c2 = 0; c2 < k; ++c2) {
-                // divide by 2 here since we always use the inter-center
-                // distances divided by 2
-                centerCenterDistDiv2[c1 * k + c2] = sqrt(centerCenterDist2(c1, c2)) / 2.0;
+                // we do not need to consider the case when c1 == c2 as centerCenterDistDiv2[c1*k+c1]
+                // is equal to zero from initialization, also this distance should not be used for s[c1]
+                if (c1 != c2) {
+                    // divide by 2 here since we always use the inter-center
+                    // distances divided by 2
+                    centerCenterDistDiv2[c1 * k + c2] = sqrt(centerCenterDist2(c1, c2)) / 2.0;
 
-                if (centerCenterDistDiv2[c1 * k + c2] < s[c1]) {
-                    s[c1] = centerCenterDistDiv2[c1 * k + c2];
+                    if (centerCenterDistDiv2[c1 * k + c2] < s[c1]) {
+                        s[c1] = centerCenterDistDiv2[c1 * k + c2];
+                    }
                 }
             }
         }
