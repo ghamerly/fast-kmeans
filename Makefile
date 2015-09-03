@@ -7,6 +7,8 @@ CPPFLAGS += -g
 CPPFLAGS += -O3
 CPPFLAGS += -Wno-long-long
 
+CPPFLAGS += -std=c++0x
+
 # Verify algorithm correctness while debugging
 #CPPFLAGS += -DDEBUG
 #CPPFLAGS += -DVERIFY_ASSIGNMENTS

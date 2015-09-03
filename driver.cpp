@@ -40,6 +40,8 @@
 #include "general_functions.h"
 #include "stats_functions.h"
 #include "hamerly_kmeans.h"
+#include "hamerly_kmeans_modified.h"
+#include "hamerly_kmeans_neighbors.h"
 #include "annulus_kmeans.h"
 #include "drake_kmeans.h"
 #include "naive_kmeans.h"
@@ -47,8 +49,10 @@
 #include "compare_kmeans.h"
 #include "sort_kmeans.h"
 #include "heap_kmeans.h"
+#include "heap_kmeans_modified.h"
 #include "naive_kernel_kmeans.h"
 #include "elkan_kernel_kmeans.h"
+#include "elkan_kmeans_modified.h"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -182,11 +186,17 @@ int main(int argc, char **argv) {
             algorithm = new NaiveKmeans();
         } else if (command == "hamerly") {
             algorithm = new HamerlyKmeans();
-        } else if (command == "annulus" || command == "norm") {
+        } else if (command == "hamerlymodified") {
+			algorithm = new HamerlyKmeansModified();
+		} else if (command == "hamerlyneighbors") {
+			algorithm = new HamerlyKmeansNeighbors();
+		} else if (command == "annulus" || command == "norm") {
             algorithm = new AnnulusKmeans();
         } else if (command == "elkan") {
             algorithm = new ElkanKmeans();
-        } else if (command == "drake") {
+        } else if (command == "elkanmodified") {
+			algorithm = new ElkanKmeansModified();
+		} else if (command == "drake") {
             // Read the number of bounds
             int b;
             std::cin >> b;
@@ -213,7 +223,9 @@ int main(int argc, char **argv) {
             algorithm = new SortKmeans();
         } else if (command == "heap") {
             algorithm = new HeapKmeans();
-        } else if (command == "kernel" || command == "elkan_kernel") {
+        } else if (command == "heapmodified") {
+			algorithm = new HeapKmeansModified();
+		} else if (command == "kernel" || command == "elkan_kernel") {
             std::string kernelType;
             std::cin >> kernelType;
             Kernel const *kernel = NULL;
@@ -279,7 +291,6 @@ int main(int argc, char **argv) {
 			}
             delete algorithm;
             algorithm = NULL;
-
         }
     }
 
