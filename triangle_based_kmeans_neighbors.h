@@ -1,23 +1,19 @@
 #ifndef TRIANGLE_BASED_KMEANS_NEIGHBORS_H
 #define TRIANGLE_BASED_KMEANS_NEIGHBORS_H
 
-/* Authors: Greg Hamerly and Jonathan Drake
+/* Authors: Greg Hamerly and Petr Ryšavý
  * Feedback: hamerly@cs.baylor.edu
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
- * Copyright 2014
+ * Copyright 2015
  *
- * OriginalSpaceKmeans is a base class for other algorithms that operate in the
- * same space as the data being clustered (as opposed to kernelized k-means
- * algorithms, which operate in kernel space).
+ * TriangleBasedKmeansNeighbors is a base class for kmeans algorithm
+ * that implement iteration over set of neighbors. It extends the
+ * ModifiedUpdateTriangleBasedKmeans and it provides functionality
+ * for using iteration over neighobrs.
  */
 
 #include "modified_update_triangle_based_kmeans.h"
 
-/* Cluster with the cluster centers living in the original space (with the
- * data). This is as opposed to a kernelized version of k-means, where the
- * center points might not be explicitly represented. This is also an abstract
- * class.
- */
 class TriangleBasedKmeansNeighbors : public ModifiedUpdateTriangleBasedKmeans {
 public:
 
@@ -32,8 +28,17 @@ public:
 
 protected:
 
+	/*
+	 * Override the lower bound calculation, so that we do not have to calculate
+	 * the neighbour set twice.
+	 */
 	void calculate_lower_bound_update();
 
+	/*
+	 * Here we will store the set of neighbors. It is k array of k arrays, which
+	 * contain set of neighbors. For each centroid there is list of neighbors,
+	 * that ends by -1, which means end.
+	 */
 	int** neighbours;
 };
 

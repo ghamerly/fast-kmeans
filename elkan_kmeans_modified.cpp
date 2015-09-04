@@ -22,6 +22,7 @@ void ElkanKmeansModified::calculate_lower_bound_update()
 		{
 			if(c != C)
 			{
+                // calculate the update and store it on the place
 				double update = 0.0;
 				if(centerMovement[c] != 0.0)
 					update = calculate_update(C, c, true);
@@ -31,15 +32,6 @@ void ElkanKmeansModified::calculate_lower_bound_update()
 	}
 }
 
-/* This function initializes the upper/lower bounds, assignment, centerCounts,
- * and sumNewCenters. It sets the bounds to invalid values which will force the
- * first iteration of k-means to set them correctly.  NB: subclasses should set
- * numLowerBounds appropriately before entering this function.
- *
- * Parameters: none
- *
- * Return value: none
- */
 void ElkanKmeansModified::initialize(Dataset const *aX, unsigned short aK, unsigned short *initialAssignment, int aNumThreads)
 {
 	numLowerBounds = aK;
@@ -55,6 +47,7 @@ int ElkanKmeansModified::runThread(int threadId, int maxIterations)
 	int startNdx = start(threadId);
 	int endNdx = end(threadId);
 
+    // this is located elsewhere than in elkan_kmeans.cpp
 	update_s(threadId);
 
 	while((iterations < maxIterations) && !converged)
@@ -149,6 +142,7 @@ void ElkanKmeansModified::update_bounds(int startNdx, int endNdx)
 		upper[i] += centerMovement[assignment[i]];
 		for (int j = 0; j < numLowerBounds; ++j)
 		{
+            // each lower bound is updated by specified value
 			lower[i * numLowerBounds + j] -= lowerBoundUpdate[assignment[i] * numLowerBounds + j];
 		}
 	}

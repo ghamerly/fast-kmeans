@@ -30,15 +30,6 @@ void HeapKmeansModified::free()
 	heapBounds = NULL;
 }
 
-/* This function initializes the upper/lower bounds, assignment, centerCounts,
- * and sumNewCenters. It sets the bounds to invalid values which will force the
- * first iteration of k-means to set them correctly.  NB: subclasses should set
- * numLowerBounds appropriately before entering this function.
- *
- * Parameters: none
- *
- * Return value: none
- */
 void HeapKmeansModified::initialize(Dataset const *aX, unsigned short aK, unsigned short *initialAssignment, int aNumThreads)
 {
 	ModifiedUpdateTriangleBasedKmeans::initialize(aX, aK, initialAssignment, aNumThreads);
@@ -57,6 +48,7 @@ void HeapKmeansModified::initialize(Dataset const *aX, unsigned short aK, unsign
     }
 
 	std::fill(heapBounds, heapBounds + k, 0.0);
+    // start with zeros here
 	std::fill(maxUpperBound, maxUpperBound + k, 0.0);
 }
 
@@ -118,6 +110,7 @@ int HeapKmeansModified::runThread(int threadId, int maxIterations)
 					closest = nextClosest;
 				}
 
+                // save the maximum upper bound, should be active only in the first iteration
 				if(u > maxUpperBound[closest])
 					maxUpperBound[closest] = u;
 
@@ -157,4 +150,5 @@ void HeapKmeansModified::update_bounds()
 	}
 }
 
+// do not do anything, we will update maximum upper bound in update_bounds
 void HeapKmeansModified::calculate_max_upper_bound() {}

@@ -1,14 +1,18 @@
 #ifndef HEAP_KMEANS_MODIFIED_H
 #define HEAP_KMEANS_MODIFIED_H
 
-/* Authors: Greg Hamerly and Jonathan Drake
+/* Authors: Greg Hamerly, Jonathan Drake and Petr Ryšavý
  * Feedback: hamerly@cs.baylor.edu
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
- * Copyright 2014
+ * Copyright 2015
  *
- * OriginalSpaceKmeans is a base class for other algorithms that operate in the
- * same space as the data being clustered (as opposed to kernelized k-means
- * algorithms, which operate in kernel space).
+ * HeapKmeans keeps k heaps, one for each cluster. The points for each cluster
+ * are kept in the respective heaps, ordered by the bound difference
+ * (lower-upper), where lower is the same as Hamerly's lower bound. For details
+ * on this algorithm, please see the forthcoming book chapter (Partitional
+ * Clustering Algorithms, Springer 2014).
+ *
+ * This class adds to HeapKmeans tigher upper bound update.
  */
 
 #include "modified_update_triangle_based_kmeans.h"
@@ -39,6 +43,9 @@ protected:
 
 	void update_bounds();
 
+	// this method is overridden, takes as maximum upper bound the
+	// maximum upper bound from the first iteration increased in
+	// each iteration by the center movement
 	virtual void calculate_max_upper_bound();
 
 	// Each thread has k heaps, so we have numThreads * k heaps.

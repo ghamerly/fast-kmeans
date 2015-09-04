@@ -29,9 +29,8 @@
  *      - for each record x assigned to that center, update its upper bound
  *          - upper(x) = upper(x) + d
  *  - after each iteration
- *      - find the center that has moved the most (with distance 'd')
  *      - update the lower bound for all (?) records:
- *          - lower(x) = lower(x) - d
+ *          - lower(x) = lower(x) - lower bound update(assignment(x))
  *
  * Parameters: none
  *
@@ -138,8 +137,6 @@ int HamerlyKmeansModified::runThread(int threadId, int maxIterations) {
 
 
 /* This method does the following:
- *  - finds the furthest-moving center
- *  - finds the distances moved by the two furthest-moving centers
  *  - updates the upper/lower bounds for each record
  *
  * Parameters: none
@@ -155,10 +152,8 @@ void HamerlyKmeansModified::update_bounds(int startNdx, int endNdx) {
         // the upper bound increases by the amount that its center moved
         upper[i] += centerMovement[assignment[i]];
 
-        // The lower bound decreases by the maximum amount that any center
-        // moved, unless the furthest-moving center is the one it's assigned
-        // to. In the latter case, the lower bound decreases by the amount
-        // of the second-furthest-moving center.
+        // The lower bound decreases by the update that was calculated by
+        // the superclass
         lower[i] -= lowerBoundUpdate[assignment[i]];
     }
 }

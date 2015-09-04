@@ -8,6 +8,9 @@
  *
  * HamerlyKmeans implements Hamerly's k-means algorithm that uses one lower
  * bound per point.
+ *
+ * This adds to the Hamerly's algorith tighter lower bound update and
+ * iteration over neighbours.
  */
 
 #include "triangle_based_kmeans_neighbors.h"

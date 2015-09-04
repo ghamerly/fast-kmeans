@@ -20,6 +20,9 @@ void TriangleBasedKmeansNeighbors::calculate_lower_bound_update()
 	for (int C = 0; C < k; ++C)
 	{
 		double maxUpdate = 0;
+        // This is half of the bound on distance between center C and some
+        // other c. If || C-c || is greater than twice this, then c is not
+        // neighbor of C.
 		double boundOnOtherDistance = maxUpperBound[C] + s[C] + centerMovement[C];
 
 		// find out which clusters are neighbours of cluster C
@@ -27,10 +30,12 @@ void TriangleBasedKmeansNeighbors::calculate_lower_bound_update()
 		for (int i = 0; i < k; ++i)
 		{
 			int c = centersByMovement[i];
-			// let them sorted by movement, we need to go through in this order in the second for loop
+			// let them sorted by movement, we need to go through in this order in the second loop
+            // so as to eliminate the updates calculations for Hamerly & heap
 			if(c != C && boundOnOtherDistance >= centerCenterDistDiv2[C*k + c])
 				neighbours[C][neighboursPos++] = c;
 		}
+        // place the stop mark
 		neighbours[C][neighboursPos] = -1;
 
 		// and small c is the other point that moved
@@ -38,9 +43,12 @@ void TriangleBasedKmeansNeighbors::calculate_lower_bound_update()
 		{
 			int c = (*ptr);
 
+            // if all remaining centroids moved less than the current update, we do not
+            // need to consider them - the case of Hamerly & heap
 			if(centerMovement[c] <= maxUpdate)
 				break;
 
+            // calculate update and overwrite if it is bigger than the current value
 			double update = calculate_update(C, c);
 				if(update > maxUpdate)
 					maxUpdate = update;
@@ -50,10 +58,8 @@ void TriangleBasedKmeansNeighbors::calculate_lower_bound_update()
 	}
 }
 
-/* This function initializes the upper/lower bounds, assignment, centerCounts,
- * and sumNewCenters. It sets the bounds to invalid values which will force the
- * first iteration of k-means to set them correctly.  NB: subclasses should set
- * numLowerBounds appropriately before entering this function.
+/* This function initializes the neighbours set to contain full
+ * relation but \Delta.
  *
  * Parameters: none
  *
@@ -73,6 +79,7 @@ void TriangleBasedKmeansNeighbors::initialize(Dataset const *aX, unsigned short 
 		for (int j = 0; j < k; ++j)
 			if(i != j)
 				neighbours[i][pos++] = j;
+        // place the termination sign, iteration will stop there
 		neighbours[i][k - 1] = -1;
 	}
 }

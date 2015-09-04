@@ -31,7 +31,7 @@
  *  - after each iteration
  *      - find the center that has moved the most (with distance 'd')
  *      - update the lower bound for all (?) records:
- *          - lower(x) = lower(x) - d
+ *          - lower(x) = lower(x) - lower bound update(assignment(x))
  *
  * Parameters: none
  *
@@ -44,6 +44,8 @@ int HamerlyKmeansNeighbors::runThread(int threadId, int maxIterations) {
     int startNdx = start(threadId);
     int endNdx = end(threadId);
 
+	// this must be done before the first iteration and also just after moving the
+	// centroids before update - this is different from original hamerly_kmeans
 	update_s(threadId);
 
     while ((iterations < maxIterations) && ! converged) {
@@ -78,6 +80,7 @@ int HamerlyKmeansNeighbors::runThread(int threadId, int maxIterations) {
 
             // now update the lower bound by looking at all other centers
             double l2 = std::numeric_limits<double>::max(); // the squared lower bound
+            // look over the neighbours of the cluster where the point is assigned
 			for(int* ptr = neighbours[closest]; (*ptr) != -1; ++ptr) {
                 double dist2 = pointCenterDist2(i, (*ptr));
 
@@ -150,10 +153,8 @@ void HamerlyKmeansNeighbors::update_bounds(int startNdx, int endNdx) {
         // the upper bound increases by the amount that its center moved
         upper[i] += centerMovement[assignment[i]];
 
-        // The lower bound decreases by the maximum amount that any center
-        // moved, unless the furthest-moving center is the one it's assigned
-        // to. In the latter case, the lower bound decreases by the amount
-        // of the second-furthest-moving center.
+        // The lower bound decreases by the update that was calculated by
+        // the superclass
         lower[i] -= lowerBoundUpdate[assignment[i]];
     }
 }

@@ -37,7 +37,8 @@ void ModifiedUpdateTriangleBasedKmeans::free()
 
 /* This method moves the newCenters to their new locations, based on the
  * sufficient statistics in sumNewCenters. It also computes the centerMovement
- * and the center that moved the furthest.
+ * and the center that moved the furthest. Here the implementation adds the
+ * loewer bound update.
  *
  * Parameters: none
  *
@@ -45,13 +46,16 @@ void ModifiedUpdateTriangleBasedKmeans::free()
  */
 int ModifiedUpdateTriangleBasedKmeans::move_centers()
 {
-	// memcopy is destination, source, length
+	// copy the location of centers into oldCenters so that we know it
 	memcpy(oldCenters->data, centers->data, sizeof(double) * (d * k));
 
+    // move the centers
 	int furthestMovingCenter = TriangleInequalityBaseKmeans::move_centers();
 
+    // if not converged ...
 	if(centerMovement[furthestMovingCenter] != 0.0)
 	{
+        // ... calculate the lower bound update
 		update_s(0);
 		calculate_max_upper_bound();
 		update_cached_inner_products();
@@ -63,12 +67,15 @@ int ModifiedUpdateTriangleBasedKmeans::move_centers()
 
 void ModifiedUpdateTriangleBasedKmeans::update_cached_inner_products()
 {
+    // copy the oldCentroids norms, we need to store this value
 	memcpy(oldCentroidsNorm2, centroidsNorm2, sizeof(double) * k);
 
 	for (int c = 0; c < k; ++c)
 	{
 		int offset = c*d;
+        // calculate norm of each centroid
 		centroidsNorm2[c] = inner_product(centers->data + offset, centers->data + offset);
+        // calculate the inner product of new and old location
 		oldNewCentroidInnerProduct[c] = inner_product(centers->data + offset, oldCenters->data + offset);
 	}
 
@@ -82,18 +89,24 @@ void ModifiedUpdateTriangleBasedKmeans::calculate_lower_bound_update()
 	for (int C = 0; C < k; ++C)
 	{
 		double maxUpdate = 0;
+        // see triangle_based_kmeans_neighbors for meaning of this (condition for neighbor)
 		double boundOnOtherDistance = maxUpperBound[C] + s[C] + centerMovement[C];
 
 		// and small c is the other point that moved
 		for (int i = 0; i < k; ++i)
 		{
+            // iterate in decreasing order of centroid movement
 			int c = centersByMovement[i];
 
+            // if all remaining centroids moved less than the current update, we do not
+            // need to consider them - the case of Hamerly & heap
 			if(centerMovement[c] <= maxUpdate)
 				break;
 
+            // if centroid c is a neighbor of C, we need to consider it for update
 			if(c != C && boundOnOtherDistance >= centerCenterDistDiv2[C*k + c])
 			{
+                // calculate update and overwrite if it is bigger than the current value
 				double update = calculate_update(C, c);
 				if(update > maxUpdate)
 					maxUpdate = update;
@@ -106,6 +119,7 @@ void ModifiedUpdateTriangleBasedKmeans::calculate_lower_bound_update()
 
 double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C, const unsigned int c, bool consider_negative)
 {
+    // those values will be needed
 	const double cCInnerProduct = inner_product(oldCenters->data + c * d, oldCenters->data + C * d);
 	const double cPrimeCInnerProduct = inner_product(centers->data + c * d, oldCenters->data + C * d);
 	const double ccPrimeInnerProduct = oldNewCentroidInnerProduct[c];
@@ -116,8 +130,10 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
 	double maxUpperBoundC = maxUpperBound[C];
 	double cMovement = centerMovement[c];
 
+    // t, that specifies the projection of C onto c cPrime line (P(c_i) = c_j + t * (c_j' - c_j))
 	double factor = (cNorm2 - cCInnerProduct + cPrimeCInnerProduct - ccPrimeInnerProduct) / cMovement / cMovement;
 
+    // calculate the distance using the extended form, now only square
 	double distanceOfCFromLine = cNorm2 * (1 - factor) * (1 - factor)
 		+ ccPrimeInnerProduct * 2 * factor * (1 - factor)
 		- cCInnerProduct * 2 * (1 - factor)
@@ -126,22 +142,27 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
 		+ factor * factor * cPrimeNorm2;
 	// rounding errors make this sometimes negative if the distance is low
 	// then this sqrt causes NaN - do abs value therefore
+    // ... from the definition this shoul never happen
 	if(distanceOfCFromLine < 0)
 		distanceOfCFromLine = -distanceOfCFromLine;
+    // calculate the distance
 	distanceOfCFromLine = sqrt(distanceOfCFromLine);
 
 	// do not care about sign, it is the same if it is + or -
 	double y = 1 - factor * 2;
 	double r = 2 * maxUpperBoundC / cMovement;
 
+    // update divided by cMovement
 	double update;
+    // the case when the sphere with radius r around C goes through c-c' line
 	if(distanceOfCFromLine < maxUpperBoundC)
 	{
+        // take the bottommost point where the sphere can be = bound by hyperplane
 		update = r - y;
-		if(update > 1)
+		if(update > 1) // this is not necessary, triangle inequality is enough
 			update = 1;
-			// put there zero, because sphere can be curved less than hyperbola and therefore
-			// negative condition may be invalid ... be careful about this
+		// put there zero, because sphere can be curved less than hyperbola and therefore
+		// negative condition may be invalid ... be careful about this
 		else if(update < 0) // the area betwenn c and center is prohibited
 			update = 0;
 	}
@@ -163,6 +184,7 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
 		}
 	}
 
+    // multiply back by the movement of c
 	return update * cMovement;
 }
 
@@ -179,6 +201,7 @@ bool ModifiedUpdateTriangleBasedKmeans::center_movement_comparator_function(int 
 	return(centerMovement[c1] > centerMovement[c2]); // values must be decreaing
 }
 
+// copied from Elkan kmeans
 void ModifiedUpdateTriangleBasedKmeans::update_s(int threadId)
 {
 	// find the inter-center distances
@@ -205,10 +228,9 @@ void ModifiedUpdateTriangleBasedKmeans::update_s(int threadId)
 	}
 }
 
-/* This function initializes the upper/lower bounds, assignment, centerCounts,
- * and sumNewCenters. It sets the bounds to invalid values which will force the
- * first iteration of k-means to set them correctly.  NB: subclasses should set
- * numLowerBounds appropriately before entering this function.
+/* This function initializes the old centers, bound update, maxUpperBound,
+ * cached inner product, the vector of centroids sorted by movement, distances
+ * between centroids and also norms of centroids.
  *
  * Parameters: none
  *
@@ -218,12 +240,13 @@ void ModifiedUpdateTriangleBasedKmeans::initialize(Dataset const *aX, unsigned s
 {
 	TriangleInequalityBaseKmeans::initialize(aX, aK, initialAssignment, aNumThreads);
 
-	// initialize them before calling super, because moveCenters() is overriden
 	oldCenters = new Dataset(k, d);
 
+    // set length k if heap, otherwise k*numLowerBounds
 	lowerBoundUpdate = new double[k * (numLowerBounds == 0 ? 1 : numLowerBounds)];
 	maxUpperBound = new double[k];
 
+    // the cached inner products
 	oldCentroidsNorm2 = new double[k];
 	centroidsNorm2 = new double[k];
 	oldNewCentroidInnerProduct = new double[k];
@@ -236,6 +259,7 @@ void ModifiedUpdateTriangleBasedKmeans::initialize(Dataset const *aX, unsigned s
 		int offset = c*d;
 		// calcualte norms of initial centers
 		centroidsNorm2[c] = inner_product(centers->data + offset, centers->data + offset);
+        // let centers by movement contain 0-1-2-3-...-k, it will be sorted
 		centersByMovement.push_back(c);
 	}
 }
