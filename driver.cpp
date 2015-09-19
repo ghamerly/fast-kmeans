@@ -51,6 +51,7 @@
 #include "heap_kmeans.h"
 #include "heap_kmeans_modified.h"
 #include "heap_kmeans_ubarr.h"
+#include "heap_kmeans_ubarr_neighbors.h"
 #include "naive_kernel_kmeans.h"
 #include "elkan_kernel_kmeans.h"
 #include "elkan_kmeans_modified.h"
@@ -224,11 +225,13 @@ int main(int argc, char **argv) {
             algorithm = new SortKmeans();
         } else if (command == "heap") {
             algorithm = new HeapKmeans();
-        } else if (command == "heapubarr") {
-            algorithm = new HeapKmeansUBarr();
         } else if (command == "heapmodified") {
 			algorithm = new HeapKmeansModified();
-		} else if (command == "kernel" || command == "elkan_kernel") {
+        } else if (command == "heapubarr") {
+            algorithm = new HeapKmeansUBarr();
+		} else if (command == "heapubarrneighbors") {
+            algorithm = new HeapKmeansUBarrNeighbors();
+        } else if (command == "kernel" || command == "elkan_kernel") {
             std::string kernelType;
             std::cin >> kernelType;
             Kernel const *kernel = NULL;

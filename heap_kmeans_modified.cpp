@@ -110,7 +110,7 @@ int HeapKmeansModified::runThread(int threadId, int maxIterations)
 					closest = nextClosest;
 				}
 
-                // save the maximum upper bound, should be active only in the first iteration
+                // save the maximum upper bound, should be active only in the first iteration and assignment changes
 				if(u > maxUpperBound[closest])
 					maxUpperBound[closest] = u;
 
