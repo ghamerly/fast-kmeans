@@ -59,6 +59,7 @@
 #include "elkan_kernel_kmeans.h"
 #include "elkan_kmeans_modified.h"
 #include "elkan_kmeans_neighbors.h"
+#include "elkan_kmeans_neighbors_rel.h"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -210,6 +211,8 @@ int main(int argc, char **argv) {
 			algorithm = new ElkanKmeansModified();
 		} else if (command == "elkanneighbors") {
             algorithm = new ElkanKmeansNeighbors();
+        } else if (command == "elkanneighborsrel") {
+            algorithm = new ElkanKmeansNeighborsRel();
         } else if (command == "drake") {
             // Read the number of bounds
             int b;
