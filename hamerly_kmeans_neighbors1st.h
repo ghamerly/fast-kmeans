@@ -10,7 +10,8 @@
  * bound per point.
  *
  * This adds to the Hamerly's algorith tighter lower bound update and
- * iteration over neighbours.
+ * iteration over neighbours. This iteration over neighbors is implemented
+ * also for the first iteration.
  */
 
 #include "hamerly_kmeans_neighbors.h"

@@ -43,6 +43,7 @@
 #include "hamerly_kmeans_modified.h"
 #include "hamerly_kmeans_neighbors.h"
 #include "hamerly_kmeans_neighbors1st.h"
+#include "hamerly_kmeans_neighbors_only.h"
 #include "annulus_kmeans.h"
 #include "annulus_kmeans_modified.h"
 #include "drake_kmeans.h"
@@ -196,6 +197,8 @@ int main(int argc, char **argv) {
 			algorithm = new HamerlyKmeansNeighbors();
 		} else if (command == "hamerlyneighbors1st") {
             algorithm = new HamerlyKmeansNeighbors1st();
+        } else if (command == "hamerlyneighborsonly") {
+            algorithm = new HamerlyKmeansNeighborsOnly();
         } else if (command == "annulus" || command == "norm") {
             algorithm = new AnnulusKmeans();
         } else if (command == "annulusmodified") {
