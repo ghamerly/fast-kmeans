@@ -4,39 +4,11 @@
  * Copyright 2014
  */
 
-#include "elkan_kmeans_modified.h"
+#include "elkan_kmeans_neighbors.h"
 #include "general_functions.h"
 #include <cmath>
 
-void ElkanKmeansModified::calculate_lower_bound_update()
-{
-	// big C is the point for that we calculate the update
-	for (int C = 0; C < k; ++C)
-	{
-		// and small c is the other point that moved
-		for (int c = 0; c < k; ++c)
-		{
-			if(c != C)
-			{
-                // calculate the update and store it on the place
-				double update = 0.0;
-				if(centerMovement[c] != 0.0)
-					update = calculate_update(C, c, true);
-				lowerBoundUpdate[C * k + c] = update;
-			}
-		}
-	}
-}
-
-void ElkanKmeansModified::initialize(Dataset const *aX, unsigned short aK, unsigned short *initialAssignment, int aNumThreads)
-{
-	numLowerBounds = aK;
-	ModifiedUpdateTriangleBasedKmeans::initialize(aX, aK, initialAssignment, aNumThreads);
-
-	std::fill(lowerBoundUpdate, lowerBoundUpdate + k * k, 0.0);
-}
-
-int ElkanKmeansModified::runThread(int threadId, int maxIterations)
+int ElkanKmeansNeighbors::runThread(int threadId, int maxIterations)
 {
 	int iterations = 0;
 
@@ -50,6 +22,11 @@ int ElkanKmeansModified::runThread(int threadId, int maxIterations)
 	{
 		++iterations;
 
+        // now we need to filter neighbors so that we remain only with those
+        // that fulfil the stronger condition that is used for elkan_kmeans
+        if(iterations != 1)
+            filter_neighbors(threadId);
+
 		synchronizeAllThreads();
 
 		for (int i = startNdx; i < endNdx; ++i)
@@ -62,8 +39,10 @@ int ElkanKmeansModified::runThread(int threadId, int maxIterations)
 				continue;
 			}
 
-			for (int j = 0; j < k; ++j)
+            // iterate only over centroids that can be closest to some x in the dataset
+            for(int* ptr = neighbours[closest]; (*ptr) != -1; ++ptr)
 			{
+				const int j = (*ptr);
 				if(j == closest)
 				{
 					continue;
@@ -124,22 +103,17 @@ int ElkanKmeansModified::runThread(int threadId, int maxIterations)
 	return iterations;
 }
 
-void ElkanKmeansModified::update_bounds(int startNdx, int endNdx)
-{
-#ifdef COUNT_DISTANCES
-	for (int i = 0; i < k; ++i)
-		for (int j = 0; j < numLowerBounds; ++j)
-		{
-			boundsUpdates += ((double) clusterSize[0][i]) * (lowerBoundUpdate[i * numLowerBounds + j]);
-		}
-#endif
-	for (int i = startNdx; i < endNdx; ++i)
-	{
-		upper[i] += centerMovement[assignment[i]];
-		for (int j = 0; j < k; ++j)
-		{
-            // each lower bound is updated by specified value
-			lower[i * numLowerBounds + j] -= lowerBoundUpdate[assignment[i] * numLowerBounds + j];
-		}
-	}
+void ElkanKmeansNeighbors::filter_neighbors(int threadId) {
+    for (int c = 0; c < k; ++c) {
+        if(c % numThreads == threadId) {
+            double boundOnOtherDistance = maxUpperBound[c] + centerMovement[c];
+            int neighboursPos = 0;
+			for (int C = 0; C < k; ++C) {
+                // select only centroids that fulfil the stronger condition
+				if(c != C && boundOnOtherDistance > centerCenterDistDiv2[c * k + C])
+					neighbours[c][neighboursPos++] = C;
+			}
+			neighbours[c][neighboursPos] = -1;
+        }
+    }
 }

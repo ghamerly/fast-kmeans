@@ -58,6 +58,7 @@
 #include "naive_kernel_kmeans.h"
 #include "elkan_kernel_kmeans.h"
 #include "elkan_kmeans_modified.h"
+#include "elkan_kmeans_neighbors.h"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -207,7 +208,9 @@ int main(int argc, char **argv) {
             algorithm = new ElkanKmeans();
         } else if (command == "elkanmodified") {
 			algorithm = new ElkanKmeansModified();
-		} else if (command == "drake") {
+		} else if (command == "elkanneighbors") {
+            algorithm = new ElkanKmeansNeighbors();
+        } else if (command == "drake") {
             // Read the number of bounds
             int b;
             std::cin >> b;
