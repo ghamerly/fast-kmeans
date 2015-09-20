@@ -140,7 +140,7 @@ void ElkanKmeansModified::update_bounds(int startNdx, int endNdx)
 	for (int i = startNdx; i < endNdx; ++i)
 	{
 		upper[i] += centerMovement[assignment[i]];
-		for (int j = 0; j < numLowerBounds; ++j)
+		for (int j = 0; j < k; ++j)
 		{
             // each lower bound is updated by specified value
 			lower[i * numLowerBounds + j] -= lowerBoundUpdate[assignment[i] * numLowerBounds + j];
