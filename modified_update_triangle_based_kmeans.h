@@ -26,7 +26,7 @@ public:
 
 	ModifiedUpdateTriangleBasedKmeans() : oldCenters(NULL),
 	lowerBoundUpdate(NULL), maxUpperBound(NULL), oldCentroidsNorm2(NULL), centroidsNorm2(NULL),
-	oldNewCentroidInnerProduct(NULL), centerCenterDistDiv2(NULL) {
+	oldNewCentroidInnerProduct(NULL), centerCenterDistDiv2(NULL),  neighbours(NULL) {
 	}
 
 	virtual ~ModifiedUpdateTriangleBasedKmeans() {
@@ -92,6 +92,16 @@ protected:
      */
 	double calculate_update(const unsigned int C, const unsigned int c, bool consider_negative = false);
 
+	/*
+	 * Calculates the neighbors of centroid C and fills the corresponding row
+	 * of the neighbors array.
+	 *
+	 * Parameters:
+	 *  C the centroid for that we need to know the neighbors
+	 * Returns: nothing
+	 */
+	void calculate_neighbors(const int C);
+
 	/* Backup the old location of the centers. */
 	Dataset *oldCenters;
 
@@ -118,6 +128,16 @@ protected:
 
 	/* Here we will store centroids sorted by how much they moved. */
 	std::vector<int> centersByMovement;
+
+	/*
+	 * Here we will store the set of neighbors. It is k array of k arrays, which
+	 * contain set of neighbors. For each centroid there is list of neighbors,
+	 * that ends by -1, which means end.
+	 *
+	 * As this is needed for evaluating the tighter lower bound update, this array
+	 * is filled every time and it is algorithm's responsibility to use it or not.
+	 */
+	int** neighbours;
 };
 
 #endif

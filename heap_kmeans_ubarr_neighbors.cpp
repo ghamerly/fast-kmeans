@@ -9,81 +9,6 @@
 #include <cmath>
 #include <algorithm>
 
-void HeapKmeansUBarrNeighbors::free()
-{
-	TriangleBasedKmeansNeighbors::free();
-    for (int t = 0; t < numThreads; ++t)
-	{
-		delete [] heaps[t];
-	}
-	delete [] heaps;
-	delete [] heapBounds;
-	delete[] maxUBHeap;
-	delete[] ubHeapBounds;
-	maxUBHeap = NULL;
-	ubHeapBounds = NULL;
-	heaps = NULL;
-	heapBounds = NULL;
-}
-
-/* Calculates the maximum upper bound over each cluster. This is achieved by
- * looking onto the top of the upper bound heap.
- */
-void HeapKmeansUBarrNeighbors::calculate_max_upper_bound()
-{
-	for (int c = 0; c < k; ++c)
-	{
-		Heap &heap = maxUBHeap[c];
-		while(heap.size() > 1)
-		{
-            // look onto the top of the heap
-            // check that the point is still assigned to this heap
-			if(c == assignment[heap[0].second]) {
-                // also the upper bound may be invalid - it may have been tigtened
-				if(upper[heap[0].second] == heap[0].first)
-					break;
-
-                // if the entry is invalid, push a new one with the correct upper bound
-				heap.push_back(std::make_pair(upper[heap[0].second], heap[0].second));
-				std::push_heap(heap.begin(), heap.end());
-			}
-
-            // drop the outdated entries
-			std::pop_heap(heap.begin(), heap.end());
-			heap.pop_back();
-		}
-
-        // and do not forget that the upper bound is relative to the center movement history
-		maxUpperBound[c] = heap[0].first + ubHeapBounds[c];
-	}
-}
-
-void HeapKmeansUBarrNeighbors::initialize(Dataset const *aX, unsigned short aK, unsigned short *initialAssignment, int aNumThreads)
-{
-	TriangleBasedKmeansNeighbors::initialize(aX, aK, initialAssignment, aNumThreads);
-
-    heaps = new Heap*[numThreads];
-	heapBounds = new double[k];
-
-    for (int t = 0; t < numThreads; ++t) {
-        heaps[t] = new Heap[k];
-        int startNdx = start(t);
-        int endNdx = end(t);
-        heaps[t][0].resize(endNdx - startNdx, std::make_pair(-1.0, 0));
-        for (int i = 0; i < endNdx - startNdx; ++i) {
-            heaps[t][0][i].second = i + startNdx;
-        }
-    }
-
-	std::fill(heapBounds, heapBounds + k, 0.0);
-    // start with zeros here
-	std::fill(maxUpperBound, maxUpperBound + k, 0.0);
-
-	maxUBHeap = new Heap[k];
-	ubHeapBounds = new double[k];
-	std::fill(ubHeapBounds, ubHeapBounds + k, 0.0);
-}
-
 int HeapKmeansUBarrNeighbors::runThread(int threadId, int maxIterations)
 {
 	int iterations = 0;
@@ -223,18 +148,4 @@ int HeapKmeansUBarrNeighbors::runThread(int threadId, int maxIterations)
 	}
 
 	return iterations;
-}
-
-void HeapKmeansUBarrNeighbors::update_bounds()
-{
-#ifdef COUNT_DISTANCES
-	for(int i = 0; i < k; ++i)
-		boundsUpdates += ((double) clusterSize[0][i]) * (lowerBoundUpdate[i]);
-#endif
-	for (int j = 0; j < k; ++j)
-	{
-		ubHeapBounds[j] += centerMovement[j];
-		heapBounds[j] += centerMovement[j];
-		heapBounds[j] += lowerBoundUpdate[j];
-	}
 }

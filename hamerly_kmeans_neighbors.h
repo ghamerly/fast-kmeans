@@ -13,18 +13,15 @@
  * iteration over neighbours.
  */
 
-#include "triangle_based_kmeans_neighbors.h"
+#include "hamerly_kmeans_modified.h"
 
-class HamerlyKmeansNeighbors : public TriangleBasedKmeansNeighbors {
+class HamerlyKmeansNeighbors : public HamerlyKmeansModified {
     public:
-        HamerlyKmeansNeighbors() { numLowerBounds = 1; }
+        HamerlyKmeansNeighbors() {}
         virtual ~HamerlyKmeansNeighbors() { free(); }
         virtual std::string getName() const { return "hamerlyneighbors"; }
 
     protected:
-        // Update the upper and lower bounds for the given range of points.
-        void update_bounds(int startNdx, int endNdx);
-
         virtual int runThread(int threadId, int maxIterations);
 };
 

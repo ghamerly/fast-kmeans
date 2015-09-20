@@ -134,27 +134,3 @@ int HamerlyKmeansNeighbors::runThread(int threadId, int maxIterations) {
 
     return iterations;
 }
-
-
-/* This method does the following:
- *  - finds the furthest-moving center
- *  - finds the distances moved by the two furthest-moving centers
- *  - updates the upper/lower bounds for each record
- *
- * Parameters: none
- */
-void HamerlyKmeansNeighbors::update_bounds(int startNdx, int endNdx) {
-#ifdef COUNT_DISTANCES
-	for(int i = 0; i < k; ++i)
-		boundsUpdates += ((double) clusterSize[0][i]) * (lowerBoundUpdate[i]);
-#endif
-    // update upper/lower bounds
-    for (int i = startNdx; i < endNdx; ++i) {
-        // the upper bound increases by the amount that its center moved
-        upper[i] += centerMovement[assignment[i]];
-
-        // The lower bound decreases by the update that was calculated by
-        // the superclass
-        lower[i] -= lowerBoundUpdate[assignment[i]];
-    }
-}
