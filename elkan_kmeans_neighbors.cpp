@@ -45,12 +45,6 @@ int ElkanKmeansNeighbors::runThread(int threadId, int maxIterations)
 			{
                 // now j has the same meaning as before
 				const int j = (*ptr);
-                // TODO this should not be there as we have neighbors
-                // .... it is implemented this way in elkan_neighbors_rel, but I would like to test it before I drop it
-				if(j == closest)
-				{
-					continue;
-				}// end of todo
 				if(upper[i] <= lower[i * k + j])
 				{
 					continue;
