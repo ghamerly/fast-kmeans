@@ -7,8 +7,8 @@
  * Copyright 2015
  *
  * HamerlyKmeans implements Hamerly's k-means algorithm that uses one lower
- * bound per point. This adds to Hamerly's algorithm tighter lower bound
- * update.
+ * bound per point. This implementation adds to Hamerly's algorithm tighter
+ * lower bound update.
  */
 
 #include "modified_update_triangle_based_kmeans.h"

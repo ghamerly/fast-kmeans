@@ -1,7 +1,7 @@
-/* Authors: Greg Hamerly and Jonathan Drake
+/* Authors: Greg Hamerly and Jonathan Drake and Petr Ryšavý
  * Feedback: hamerly@cs.baylor.edu
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
- * Copyright 2014
+ * Copyright 2015
  */
 
 #include "elkan_kmeans_modified.h"
@@ -16,6 +16,7 @@ void ElkanKmeansModified::calculate_lower_bound_update()
 		// and small c is the other point that moved
 		for (int c = 0; c < k; ++c)
 		{
+            // ignore the diagonal of the matrix, the bound is not used
 			if(c != C)
 			{
                 // calculate the update and store it on the place
@@ -43,7 +44,8 @@ int ElkanKmeansModified::runThread(int threadId, int maxIterations)
 	int startNdx = start(threadId);
 	int endNdx = end(threadId);
 
-    // this is located elsewhere than in elkan_kmeans.cpp
+    // here we need to calculate s & the centroid-centroid distances before the first iteration
+    // the remaining calls to this method are hidden by move_centers
 	update_s(threadId);
 
 	while((iterations < maxIterations) && !converged)
@@ -138,7 +140,7 @@ void ElkanKmeansModified::update_bounds(int startNdx, int endNdx)
 		upper[i] += centerMovement[assignment[i]];
 		for (int j = 0; j < k; ++j)
 		{
-            // each lower bound is updated by specified value
+            // each lower bound is updated by specified value, not by the center movement
 			lower[i * numLowerBounds + j] -= lowerBoundUpdate[assignment[i] * numLowerBounds + j];
 		}
 	}

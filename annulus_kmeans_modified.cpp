@@ -1,7 +1,7 @@
-/* Authors: Greg Hamerly and Jonathan Drake
+/* Authors: Greg Hamerly and Jonathan Drake and Petr Ryšavý
  * Feedback: hamerly@cs.baylor.edu
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
- * Copyright 2014
+ * Copyright 2015
  */
 
 #include "annulus_kmeans_modified.h"
@@ -27,6 +27,8 @@ int AnnulusKmeansModified::runThread(int threadId, int maxIterations) {
     int startNdx = start(threadId);
     int endNdx = end(threadId);
 
+    // here we need to calculate s & the centroid-centroid distances before the first iteration
+    // the remaining calls to this method are hidden by move_centers
 	update_s(threadId);
 
     while ((iterations < maxIterations) && ! converged) {
@@ -35,31 +37,22 @@ int AnnulusKmeansModified::runThread(int threadId, int maxIterations) {
         synchronizeAllThreads();
 
         if (threadId == 0) {
-            // compute the inter-center distances, keeping only the closest distances
             sort_means_by_norm();
         }
         synchronizeAllThreads();
 
-        // loop over all records
         for (int i = startNdx; i < endNdx; ++i) {
             unsigned short closest = assignment[i];
 
-            // if upper[i] is less than the greater of these two, then we can
-            // ignore record i
             double upper_comparison_bound = std::max(s[closest], lower[i]);
 
-            // first check: if u(x) <= s(c(x)) or u(x) <= lower(x), then ignore
-            // x, because its closest center must still be closest
             if (upper[i] <= upper_comparison_bound) {
                 continue;
             }
 
-            // otherwise, compute the real distance between this record and its
-            // closest center, and update upper
             double u2 = pointCenterDist2(i, closest);
             upper[i] = sqrt(u2);
 
-            // if (u(x) <= s(c(x))) or (u(x) <= lower(x)), then ignore x
             if (upper[i] <= upper_comparison_bound) {
                 continue;
             }
@@ -86,18 +79,13 @@ int AnnulusKmeansModified::runThread(int threadId, int maxIterations) {
                         closest = jp->second;
                     }
                 } else if (dist2 < l2) {
-                    // we must reduce the lower bound on the distance to the
-                    // *second* closest center to x[i]
                     l2 = dist2;
                     guard[i] = jp->second;
                 }
             }
 
-            // we have been dealing in squared distances; need to convert
             lower[i] = sqrt(l2);
 
-            // if the assignment for i has changed, then adjust the counts and
-            // locations of each center's accumulated mass
             if (assignment[i] != closest) {
                 upper[i] = sqrt(u2);
                 changeAssignment(i, closest, threadId);
@@ -106,8 +94,6 @@ int AnnulusKmeansModified::runThread(int threadId, int maxIterations) {
 
         verifyAssignment(iterations, startNdx, endNdx);
 
-        // ELKAN 4, 5, AND 6
-        // calculate the new center locations
         synchronizeAllThreads();
         if (threadId == 0) {
             int furthestMovingCenter = move_centers();
@@ -145,7 +131,6 @@ void AnnulusKmeansModified::initialize(Dataset const *aX, unsigned short aK, uns
 }
 
 void AnnulusKmeansModified::sort_means_by_norm() {
-    // sort the centers by their norms
     for (int c1 = 0; c1 < k; ++c1) {
         cOrder[c1].first = sqrt(centerCenterInnerProduct(c1, c1));
         cOrder[c1].second = c1;

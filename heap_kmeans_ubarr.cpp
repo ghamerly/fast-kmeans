@@ -1,7 +1,7 @@
-/* Authors: Greg Hamerly and Jonathan Drake
+/* Authors: Greg Hamerly and Jonathan Drake and Petr Ryšavý
  * Feedback: hamerly@cs.baylor.edu
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
- * Copyright 2014
+ * Copyright 2015
  */
 
 #include "heap_kmeans_ubarr.h"
@@ -19,7 +19,7 @@ void HeapKmeansUBarr::free()
 }
 
 /* Calculates the maximum upper bound over each cluster. This is achieved by
- * looking onto the top of the upper bound heap.
+ * looking onto the top of the heaps that contain the upper bound.
  */
 void HeapKmeansUBarr::calculate_max_upper_bound()
 {
@@ -29,7 +29,7 @@ void HeapKmeansUBarr::calculate_max_upper_bound()
 		while(heap.size() > 1)
 		{
             // look onto the top of the heap
-            // check that the point is still assigned to this heap
+            // check that the point is still assigned to this cluter
 			if(c == assignment[heap[0].second]) {
                 // also the upper bound may be invalid - it may have been tigtened
 				if(upper[heap[0].second] == heap[0].first)
@@ -96,6 +96,7 @@ int HeapKmeansUBarr::runThread(int threadId, int maxIterations)
 
                 // if the upper bound is less than s, closest, push the point to the heap
                 // with new key - using s[closest] to estimate the lower bound
+                // this is equivalent to tightening the upper bound in Hamerly's aglorithm
 				if(u <= s[closest]){ // note that this cannot happen in the 1st iteration (u = inf)
 					const double newLower = heapBounds[closest] + 2 * (s[closest] - u);
 					heap.push_back(std::make_pair(newLower, i));
@@ -106,7 +107,7 @@ int HeapKmeansUBarr::runThread(int threadId, int maxIterations)
 				double u2 = pointCenterDist2(i, closest);
 				u = sqrt(u2);
 
-                // same condition as in the case of Hamerly's algorithm
+                // the same condition as in the case of Hamerly's algorithm
 				if(u <= std::max(s[closest], originalLower) && iterations != 1)
 				{
 					upper[i] = u - ubHeapBounds[closest];
@@ -156,7 +157,6 @@ int HeapKmeansUBarr::runThread(int threadId, int maxIterations)
 				u = sqrt(u2);
 				bound = sqrt(l2) - u;
 
-				// Break ties consistently with Lloyd (also prevents infinite cycle)
 				if((bound == 0.0) && (nextClosest < closest))
 				{
 					closest = nextClosest;
@@ -207,6 +207,7 @@ void HeapKmeansUBarr::update_bounds()
 #endif
 	for (int j = 0; j < k; ++j)
 	{
+        // this is by what grow the upper bounds
 		ubHeapBounds[j] += centerMovement[j];
 		heapBounds[j] += centerMovement[j];
 		heapBounds[j] += lowerBoundUpdate[j];

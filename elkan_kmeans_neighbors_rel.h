@@ -38,8 +38,8 @@ protected:
 	// the maximum upper bound needs to be updated by the relative movement
 	virtual void calculate_max_upper_bound();
 
-	// in those two arrays we will store how much is changed the upper/lower
-	// bound so that we do not need to update them, but only the accumulated
+	// in those two arrays we will store how much the upper/lower bound
+	// is changed so that we do not need to update them, but only the accumulated
 	// center movement
 	// the upper bound is relative to the movement of the assigned centroid
 	double * upperRel;

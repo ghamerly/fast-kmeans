@@ -1,7 +1,7 @@
-/* Authors: Greg Hamerly and Jonathan Drake
+/* Authors: Greg Hamerly and Jonathan Drake and Petr Ryšavý
  * Feedback: hamerly@cs.baylor.edu
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
- * Copyright 2014
+ * Copyright 2015
  */
 
 #include "modified_update_triangle_based_kmeans.h"
@@ -104,13 +104,12 @@ int HeapKmeansModified::runThread(int threadId, int maxIterations)
 				const double u = sqrt(u2);
 				const double bound = sqrt(l2) - u;
 
-				// Break ties consistently with Lloyd (also prevents infinite cycle)
 				if((bound == 0.0) && (nextClosest < closest))
 				{
 					closest = nextClosest;
 				}
 
-                // save the maximum upper bound, should be active only in the first iteration and assignment changes
+                // save the maximum upper bound, should be active only in the first iteration and when assignment changes
 				if(u > maxUpperBound[closest])
 					maxUpperBound[closest] = u;
 
@@ -142,10 +141,16 @@ int HeapKmeansModified::runThread(int threadId, int maxIterations)
 
 void HeapKmeansModified::update_bounds()
 {
+	#ifdef COUNT_DISTANCES
+	for(int i = 0; i < k; ++i)
+		boundsUpdates += ((double) clusterSize[0][i]) * (lowerBoundUpdate[i]);
+	#endif
 	for (int j = 0; j < k; ++j)
 	{
+        // this is the worst case by that the maximum upper bound can grow
 		maxUpperBound[j] += centerMovement[j];
 		heapBounds[j] += centerMovement[j];
+        // update the lower bound by the calculated tighter update
 		heapBounds[j] += lowerBoundUpdate[j];
 	}
 }

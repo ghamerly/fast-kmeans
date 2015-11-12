@@ -8,7 +8,8 @@
  *
  * HeapKmeansUBarrNeighbors extends HeapKmeansModifiedUBarr. This algorithm
  * enhances the the previous algorithm by iteration over neighbors, which
- * allows it to eliminate centroids from the innermost loop.
+ * allows it to eliminate centroids from the innermost loop. Everything is
+ * exactly same as in the parent class.
  */
 
 #include "heap_kmeans_ubarr.h"

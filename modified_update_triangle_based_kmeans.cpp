@@ -1,7 +1,7 @@
-/* Authors: Greg Hamerly and Jonathan Drake
+/* Authors: Greg Hamerly and Jonathan Drake and Petr Ryšavý
  * Feedback: hamerly@cs.baylor.edu
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
- * Copyright 2014
+ * Copyright 2015
  */
 
 #include "modified_update_triangle_based_kmeans.h"
@@ -39,8 +39,12 @@ void ModifiedUpdateTriangleBasedKmeans::free()
 
 /* This method moves the newCenters to their new locations, based on the
  * sufficient statistics in sumNewCenters. It also computes the centerMovement
- * and the center that moved the furthest. Here the implementation adds the
- * loewer bound update.
+ * and the center that moved the furthest.
+ *
+ * Here the implementation adds the lower bound update. This includes copying
+ * the old centroid locations and calculating the update. After this method
+ * the center-center distances are known, the s array is filled and the tighter
+ * lower bound update is calculated.
  *
  * Parameters: none
  *
@@ -51,19 +55,20 @@ int ModifiedUpdateTriangleBasedKmeans::move_centers()
 	// copy the location of centers into oldCenters so that we know it
 	memcpy(oldCenters->data, centers->data, sizeof(double) * (d * k));
 
-    // move the centers
+    // move the centers as we do in the original algorithms
 	int furthestMovingCenter = TriangleInequalityBaseKmeans::move_centers();
 
     // if not converged ...
 	if(centerMovement[furthestMovingCenter] != 0.0)
 	{
         // ... calculate the lower bound update
-		update_s(0);
-		calculate_max_upper_bound();
-		update_cached_inner_products();
-		calculate_lower_bound_update();
+		update_s(0); // first update center-center distances
+		calculate_max_upper_bound(); // get m(c_i)
+		update_cached_inner_products(); // update precalculated norms
+		calculate_lower_bound_update(); // and get the update
 	}
 
+    // return transparently to the overridden method
 	return furthestMovingCenter;
 }
 
@@ -72,7 +77,7 @@ void ModifiedUpdateTriangleBasedKmeans::update_cached_inner_products()
     // copy the oldCentroids norms, we need to store this value
 	memcpy(oldCentroidsNorm2, centroidsNorm2, sizeof(double) * k);
 
-	for (int c = 0; c < k; ++c)
+	for (int c = 0; c < k; ++c) // for each centroid
 	{
 		int offset = c*d;
         // calculate norm of each centroid
@@ -85,6 +90,10 @@ void ModifiedUpdateTriangleBasedKmeans::update_cached_inner_products()
 	std::sort(centersByMovement.begin(), centersByMovement.end(), std::bind(&ModifiedUpdateTriangleBasedKmeans::center_movement_comparator_function, this, std::placeholders::_1, std::placeholders::_2));
 }
 
+/* This method does the aggregation of the updates so that we can
+ * use it in algorithms with single bound. It is overridden in modified
+ * versions of Elkan's algorithm.
+ */
 void ModifiedUpdateTriangleBasedKmeans::calculate_lower_bound_update()
 {
 	// big C is the point for that we calculate the update
@@ -94,14 +103,15 @@ void ModifiedUpdateTriangleBasedKmeans::calculate_lower_bound_update()
 
 		double maxUpdate = 0;
 
-		// and small c is the other point that moved
+        // iterate in decreasing order of centroid movement
+        // ... it is already stored this way in neighbors array
 		for(int* ptr = neighbours[C]; (*ptr) != -1; ++ptr)
 		{
-            // iterate in decreasing order of centroid movement
+            // and small c is the other point that moved
 			const int c = (*ptr);
 
             // if all remaining centroids moved less than the current update, we do not
-            // need to consider them - the case of Hamerly & heap
+            // need to consider them - the case of Hamerly's & heap
 			if(centerMovement[c] <= maxUpdate)
 				break;
 
@@ -111,10 +121,12 @@ void ModifiedUpdateTriangleBasedKmeans::calculate_lower_bound_update()
                 maxUpdate = update;
         }
 
+        // store the tighter update for this cluster
 		lowerBoundUpdate[C] = maxUpdate;
 	}
 }
 
+// notion: C is the point c_i in the thesis c is the point c_j in the thesis
 double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C, const unsigned int c, bool consider_negative)
 {
     // those values will be needed
@@ -131,7 +143,7 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
     // t, that specifies the projection of C onto c cPrime line (P(c_i) = c_j + t * (c_j' - c_j))
 	double factor = (cNorm2 - cCInnerProduct + cPrimeCInnerProduct - ccPrimeInnerProduct) / cMovement / cMovement;
 
-    // calculate the distance using the extended form, now only square
+    // calculate the distance ||P(c_i)-c_i|| using the extended form, now only square
 	double distanceOfCFromLine = cNorm2 * (1 - factor) * (1 - factor)
 		+ ccPrimeInnerProduct * 2 * factor * (1 - factor)
 		- cCInnerProduct * 2 * (1 - factor)
@@ -140,32 +152,37 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
 		+ factor * factor * cPrimeNorm2;
 	// rounding errors make this sometimes negative if the distance is low
 	// then this sqrt causes NaN - do abs value therefore
-    // ... from the definition this shoul never happen
+    // ... from the definition this should never happen
 	if(distanceOfCFromLine < 0)
 		distanceOfCFromLine = -distanceOfCFromLine;
     // calculate the distance
 	distanceOfCFromLine = sqrt(distanceOfCFromLine);
 
-	// do not care about sign, it is the same if it is + or -
+	// project the y coordinate
 	double y = 1 - factor * 2;
+    // project the radius of the sphere around the cluster
 	double r = 2 * maxUpperBoundC / cMovement;
 
-    // update divided by cMovement
+    // here we will store the update divided by cMovement
 	double update;
     // the case when the sphere with radius r around C goes through c-c' line
 	if(distanceOfCFromLine < maxUpperBoundC)
 	{
         // take the bottommost point where the sphere can be = bound by hyperplane
+        // perpendicular to the line through c and c'
 		update = r - y;
-		if(update > 1) // this is not necessary, triangle inequality is enough
+		if(update > 1) // this is too bad, triangle inequality gives us better result
 			update = 1;
-		// put there zero, because sphere can be curved less than hyperbola and therefore
-		// negative condition may be invalid ... be careful about this
-		else if(update < 0) // the area betwenn c and center is prohibited
-			update = 0;
+		// put there zero, because sphere can be curved less than the hyperbola and therefore
+		// condition that while circle is above the hyperbola may be invalid
+        // bound therefore by a hyperplane that goes throught the origin and is perpendicular to c-c'
+		else if(update < 0)
+			return 0.0; // we do not need to scale zero by multiplying, return here
 	}
 	else
 	{
+        // TODO this needs to be rewritten so that we switch on the cases when
+        // update < 0. This is equivallent to condition that r < y
 		double x = 2 * distanceOfCFromLine / cMovement;
 		double xSqPlusYSq = x * x + y*y;
 		double aNorm = sqrt(xSqPlusYSq - r * r);
@@ -179,6 +196,9 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
 			xSqPlusYSq = x * x + y*y;
 			aNorm = sqrt(xSqPlusYSq - r * r);
 			update = (x * r - y * aNorm) / xSqPlusYSq;
+
+            if(update > 0)
+                return 0.0;
 		}
 	}
 
@@ -188,6 +208,7 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
 
 void ModifiedUpdateTriangleBasedKmeans::calculate_max_upper_bound()
 {
+    // calculate over the array of upper bound and find maximum for each cluster
 	std::fill(maxUpperBound, maxUpperBound + k, 0.0);
 	for (int i = 0; i < n; ++i)
 		if(maxUpperBound[assignment[i]] < upper[i])
@@ -199,7 +220,8 @@ bool ModifiedUpdateTriangleBasedKmeans::center_movement_comparator_function(int 
 	return(centerMovement[c1] > centerMovement[c2]); // values must be decreaing
 }
 
-// copied from Elkan kmeans
+// copied from elkan_kmeans.cpp
+// finds the center-center distances
 void ModifiedUpdateTriangleBasedKmeans::update_s(int threadId)
 {
 	// find the inter-center distances
@@ -212,8 +234,6 @@ void ModifiedUpdateTriangleBasedKmeans::update_s(int threadId)
 			for (int c2 = 0; c2 < k; ++c2)
 			{
 				if(c1 != c2) {
-                    // divide by 2 here since we always use the inter-center
-                    // distances divided by 2
                     centerCenterDistDiv2[c1 * k + c2] = sqrt(centerCenterDist2(c1, c2)) / 2.0;
 
                     if(centerCenterDistDiv2[c1 * k + c2] < s[c1])
@@ -240,7 +260,7 @@ void ModifiedUpdateTriangleBasedKmeans::initialize(Dataset const *aX, unsigned s
 
 	oldCenters = new Dataset(k, d);
 
-    // set length k if heap, otherwise k*numLowerBounds
+    // set length k if heap (numLB = 0), otherwise k*numLowerBounds
 	lowerBoundUpdate = new double[k * (numLowerBounds == 0 ? 1 : numLowerBounds)];
 	maxUpperBound = new double[k];
 
@@ -257,7 +277,7 @@ void ModifiedUpdateTriangleBasedKmeans::initialize(Dataset const *aX, unsigned s
 		int offset = c*d;
 		// calcualte norms of initial centers
 		centroidsNorm2[c] = inner_product(centers->data + offset, centers->data + offset);
-        // let centers by movement contain 0-1-2-3-...-k, it will be sorted
+        // let centers by movement contain initially 0-1-2-3-...-k, it will be sorted each iteration
 		centersByMovement.push_back(c);
 	}
 
@@ -276,6 +296,7 @@ void ModifiedUpdateTriangleBasedKmeans::initialize(Dataset const *aX, unsigned s
     }
 }
 
+/* Here we will calculate the neighbors of the cluster centered at C. */
 void ModifiedUpdateTriangleBasedKmeans::calculate_neighbors(const int C)
 {
     // This is half of the bound on distance between center C and some
@@ -287,9 +308,10 @@ void ModifiedUpdateTriangleBasedKmeans::calculate_neighbors(const int C)
     int neighboursPos = 0;
     for (int i = 0; i < k; ++i)
     {
-        int c = centersByMovement[i];
-        // let them sorted by movement, we need to go through in this order in the second loop
+        // let them be sorted by movement, we need to go through in this order in the second loop
         // so as to eliminate the updates calculations for Hamerly & heap
+        int c = centersByMovement[i];
+        // exclude also C from negihbors and check the condition
         if(c != C && boundOnOtherDistance >= centerCenterDistDiv2[C * k + c])
             neighbours[C][neighboursPos++] = c;
     }

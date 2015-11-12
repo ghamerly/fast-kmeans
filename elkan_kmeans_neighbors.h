@@ -8,7 +8,8 @@
  *
  * Elkan's k-means algorithm that uses k lower bounds per point to prune
  * distance calculations. This adds to the Elkan's algorithm tighter
- * lower bound udpate and iteration over neighbors.
+ * lower bound udpate and iteration over neighbors. Note that for Elkan's
+ * algorithm this condition is more strong than for other algorithms.
  */
 
 #include "elkan_kmeans_modified.h"

@@ -9,7 +9,7 @@
  * HeapKmeansUBarr extends HeapKmeansModified. This algorithm enhances the
  * heap algorithm by array with upper bound and also a heap for finding
  * maximum over this array. As a result this algorithm can take advantage
- * from tightening upper bound and other advantages that Hamerly's algorithm
+ * from tightening the upper bound and other advantages that Hamerly's algorithm
  * have over the heap algorithm.
  */
 
@@ -42,6 +42,8 @@ protected:
 
 	void update_bounds();
 
+	// When we will calculate the maximum upper bound, we will use the values
+	// stored in the *maxUBHeap to find the maximum of the upper bound
 	virtual void calculate_max_upper_bound();
 
 	// this will be set of k heaps, one for each centroid
@@ -52,6 +54,8 @@ protected:
 	// this array relativizes the upper bound, similarly as the
 	// heap key, so that we do not have to update all the n
 	// upper bounds, but updating k is enough
+	// ... note that the upper bound array is in parent class,
+	//     but it is not used there
 	double *ubHeapBounds;
 };
 

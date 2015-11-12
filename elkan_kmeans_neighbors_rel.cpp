@@ -1,7 +1,7 @@
-/* Authors: Greg Hamerly and Jonathan Drake
+/* Authors: Greg Hamerly and Jonathan Drake and Petr Ryšavý
  * Feedback: hamerly@cs.baylor.edu
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
- * Copyright 2014
+ * Copyright 2015
  */
 
 #include "elkan_kmeans_neighbors_rel.h"
@@ -42,7 +42,8 @@ int ElkanKmeansNeighborsRel::runThread(int threadId, int maxIterations)
 	int startNdx = start(threadId);
 	int endNdx = end(threadId);
 
-    // this is located elsewhere than in elkan_kmeans.cpp
+    // here we need to calculate s & the centroid-centroid distances before the first iteration
+    // the remaining calls to this method are hidden by move_centers
 	update_s(threadId);
 
 	while((iterations < maxIterations) && !converged)
@@ -71,6 +72,7 @@ int ElkanKmeansNeighborsRel::runThread(int threadId, int maxIterations)
             // iterate only over centroids that can be closest to some x in the dataset
             for(int* ptr = neighbours[closest]; (*ptr) != -1; ++ptr)
 			{
+                // now j has the same meaning as before
 				int j = (*ptr);
                 // here is the true value of the lower bound
 				double lowerIJ = lower[i * k + j] - lowerRel[assignment[i] * k + j];

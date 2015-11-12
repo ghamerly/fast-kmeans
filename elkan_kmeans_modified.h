@@ -7,8 +7,9 @@
  * Copyright 2015
  *
  * Elkan's k-means algorithm that uses k lower bounds per point to prune
- * distance calculations. This adds to the Elkan's algorithm tighter
- * lower bound udpate.
+ * distance calculations.
+ *
+ * This adds to the Elkan's algorithm tighter lower bound udpate.
  */
 
 #include "modified_update_triangle_based_kmeans.h"
@@ -31,6 +32,7 @@ public:
 protected:
 
 	// override this as we are calculating each bound explicitly
+	// this is different from the default implemntation
 	virtual void calculate_lower_bound_update();
 
 	virtual int runThread(int threadId, int maxIterations);

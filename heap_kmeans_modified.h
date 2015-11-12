@@ -6,13 +6,11 @@
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
  * Copyright 2015
  *
- * HeapKmeans keeps k heaps, one for each cluster. The points for each cluster
- * are kept in the respective heaps, ordered by the bound difference
- * (lower-upper), where lower is the same as Hamerly's lower bound. For details
- * on this algorithm, please see the forthcoming book chapter (Partitional
- * Clustering Algorithms, Springer 2014).
- *
- * This class adds to HeapKmeans tigher upper bound update.
+ * This class is extension to the HeapKmeans. It implement the tigher upper bound update
+ * that uses only estimate of m(c_i). To get more information about heap kmeans see
+ * heap_kmeans.cpp/h. To get information about the tighter update see
+ * modified_update_triangle_based_kmeans.h. The most of the code is inherited from the
+ * parent class or copied from the HeapKmeans.h.
  */
 
 #include "modified_update_triangle_based_kmeans.h"
@@ -48,13 +46,8 @@ protected:
 	// each iteration by the center movement
 	virtual void calculate_max_upper_bound();
 
-	// Each thread has k heaps, so we have numThreads * k heaps.
 	Heap **heaps;
 
-	// The heapBounds essentially accumulate the total distance traveled by
-	// each center over the iterations of k-means. This value is used to
-	// compare with the heap priority to determine if a point's bounds
-	// (lower-upper) are violated (i.e. < 0).
 	double *heapBounds;
 };
 

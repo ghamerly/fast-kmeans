@@ -1,7 +1,7 @@
-/* Authors: Greg Hamerly and Jonathan Drake
+/* Authors: Greg Hamerly and Jonathan Drake and Petr Ryšavý
  * Feedback: hamerly@cs.baylor.edu
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
- * Copyright 2014
+ * Copyright 2015
  */
 
 #include "elkan_kmeans_neighbors.h"
@@ -15,7 +15,8 @@ int ElkanKmeansNeighbors::runThread(int threadId, int maxIterations)
 	int startNdx = start(threadId);
 	int endNdx = end(threadId);
 
-    // this is located elsewhere than in elkan_kmeans.cpp
+    // here we need to calculate s & the centroid-centroid distances before the first iteration
+    // the remaining calls to this method are hidden by move_centers
 	update_s(threadId);
 
 	while((iterations < maxIterations) && !converged)
@@ -42,11 +43,14 @@ int ElkanKmeansNeighbors::runThread(int threadId, int maxIterations)
             // iterate only over centroids that can be closest to some x in the dataset
             for(int* ptr = neighbours[closest]; (*ptr) != -1; ++ptr)
 			{
+                // now j has the same meaning as before
 				const int j = (*ptr);
+                // TODO this should not be there as we have neighbors
+                // .... it is implemented this way in elkan_neighbors_rel, but I would like to test it before I drop it
 				if(j == closest)
 				{
 					continue;
-				}
+				}// end of todo
 				if(upper[i] <= lower[i * k + j])
 				{
 					continue;
@@ -106,8 +110,10 @@ int ElkanKmeansNeighbors::runThread(int threadId, int maxIterations)
 void ElkanKmeansNeighbors::filter_neighbors(int threadId) {
     for (int c = 0; c < k; ++c) {
         if(c % numThreads == threadId) {
+            // use the stronger condition without s[c] on the left
             double boundOnOtherDistance = maxUpperBound[c] + centerMovement[c];
             int neighboursPos = 0;
+            // fill the array in the similar manner as we did before
 			for (int C = 0; C < k; ++C) {
                 // select only centroids that fulfil the stronger condition
 				if(c != C && boundOnOtherDistance > centerCenterDistDiv2[c * k + C])

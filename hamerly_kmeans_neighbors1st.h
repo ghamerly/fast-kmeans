@@ -11,7 +11,8 @@
  *
  * This adds to the Hamerly's algorith tighter lower bound update and
  * iteration over neighbours. This iteration over neighbors is implemented
- * also for the first iteration.
+ * also for the first iteration, which means some additional modifications
+ * to the runThread method.
  */
 
 #include "hamerly_kmeans_neighbors.h"

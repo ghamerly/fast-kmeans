@@ -6,7 +6,9 @@
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
  * Copyright 2015
  *
- * This version of Annulus algorithm implements the tighter update.
+ * This version of Annulus algorithm implements the tighter update. Most of the
+ * code is copied from the default version of Annulus algorithm, only the parent
+ * class is HamerlyKmeansModified.
  */
 
 #include "hamerly_kmeans_modified.h"
@@ -26,18 +28,10 @@ class AnnulusKmeansModified : public HamerlyKmeansModified {
         virtual int runThread(int threadId, int maxIterations);
         void sort_means_by_norm();
 
-        // The norm of each point.
         double *xNorm;
 
-        // The order of the centers (first is the norm, second is the center
-        // index).
         std::pair<double, int> *cOrder;
 
-        // Guard is an index, for each point, of what is (or might be) the
-        // second-closest center. When we tighten the bound, it is the
-        // second-closest; however, this is not guaranteed to hold as the bounds
-        // change. It is still useful as an index of a close center that is not
-        // the closest.
         unsigned short *guard;
 };
 

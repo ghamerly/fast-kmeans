@@ -1,22 +1,13 @@
-/* Authors: Greg Hamerly and Jonathan Drake
+/* Authors: Greg Hamerly and Jonathan Drake and Petr Ryšavý
  * Feedback: hamerly@cs.baylor.edu
  * See: http://cs.baylor.edu/~hamerly/software/kmeans.php
- * Copyright 2014
+ * Copyright 2015
  */
 
 #include "hamerly_kmeans_neighbors_only.h"
 #include "general_functions.h"
 #include <cmath>
 
-/* This method moves the newCenters to their new locations, based on the
- * sufficient statistics in sumNewCenters. It also computes the centerMovement
- * and the center that moved the furthest. Here the implementation adds the
- * loewer bound update.
- *
- * Parameters: none
- *
- * Return value: index of the furthest-moving centers
- */
 int HamerlyKmeansNeighborsOnly::move_centers()
 {
     // move the centers
@@ -25,7 +16,7 @@ int HamerlyKmeansNeighborsOnly::move_centers()
     // if not converged ...
 	if(centerMovement[furthestMovingCenter] != 0.0)
 	{
-        // ... calculate the lower bound update
+        // ... calculate the neighbors and the lower bound update given by the triangle inequality
 		update_s(0);
 		calculate_max_upper_bound();
         for(int i = 0; i < k; ++i)
@@ -37,7 +28,8 @@ int HamerlyKmeansNeighborsOnly::move_centers()
 }
 
 /* This method fills the lower bound update array in the same manner as it
- * would be filled for the default Hamerly kmeans implementation. */
+ * would be filled for the default Hamerly's kmeans implementation. The
+ * code is copied from hamerly_kmeans.cpp with small modification. */
 void HamerlyKmeansNeighborsOnly::calculate_lower_bound_update()
 {
     int furthestMovingCenter = 0;
@@ -53,6 +45,7 @@ void HamerlyKmeansNeighborsOnly::calculate_lower_bound_update()
         }
     }
 
+    // store the update instead of updating the bound directly
     for (int i = 0; i < k; ++i)
         lowerBoundUpdate[i] = (i == furthestMovingCenter) ? secondLongest : longest;
 }
