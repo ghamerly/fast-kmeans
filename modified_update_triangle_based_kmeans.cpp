@@ -171,39 +171,40 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
         // take the bottommost point where the sphere can be = bound by hyperplane
         // perpendicular to the line through c and c'
 		update = r - y;
-		if(update > 1) // this is too bad, triangle inequality gives us better result
-			update = 1;
+		if(update >= 1.0) // this is too bad, triangle inequality gives us better result
+			return cMovement;
 		// put there zero, because sphere can be curved less than the hyperbola and therefore
 		// condition that while circle is above the hyperbola may be invalid
         // bound therefore by a hyperplane that goes throught the origin and is perpendicular to c-c'
 		else if(update < 0)
 			return 0.0; // we do not need to scale zero by multiplying, return here
+        return update * cMovement;
 	}
-	else
-	{
-        // TODO this needs to be rewritten so that we switch on the cases when
-        // update < 0. This is equivallent to condition that r < y
-		double x = 2 * distanceOfCFromLine / cMovement;
-		double xSqPlusYSq = x * x + y*y;
-		double aNorm = sqrt(xSqPlusYSq - r * r);
-		update = (x * r - y * aNorm) / xSqPlusYSq;
 
-		// handle the negative update ... it is the same as decreasing y by 1,
-		// i.e. moving sphere by half center movement down
-		if(consider_negative && update < 0)
-		{
-			y -= 1;
-			xSqPlusYSq = x * x + y*y;
-			aNorm = sqrt(xSqPlusYSq - r * r);
-			update = (x * r - y * aNorm) / xSqPlusYSq;
+    // this is the cae when the circle contains no point with a negative coordinate
+    if(y > r)
+    {
+        if(!consider_negative)
+            return 0.0;
+        // Note that if the bottommost point of the sphere has y-coordinate
+        // from interval [0,1], we have to use update 0
+        if(y - r <= 1.0)
+            return 0.0;
 
-            if(update > 0)
-                return 0.0;
-		}
-	}
+        // handle the negative update ... it is the same as decreasing y by 1,
+        // i.e. moving sphere by half center movement down
+        y -= 1.0;
+    }
+
+    // the case that fulfils conditions of Lemma 3.1 (or the case when y = y-1)
+    // encode the formula
+    const double x = 2 * distanceOfCFromLine / cMovement;
+    const double xSqPlusYSq = x * x + y*y;
+    const double aNorm = sqrt(xSqPlusYSq - r * r);
+    update = (x * r - y * aNorm) / xSqPlusYSq;
 
     // multiply back by the movement of c
-	return update * cMovement;
+    return update * cMovement;
 }
 
 void ModifiedUpdateTriangleBasedKmeans::calculate_max_upper_bound()
