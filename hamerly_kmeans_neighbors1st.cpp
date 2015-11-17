@@ -106,68 +106,10 @@ int HamerlyKmeansNeighbors1st::runThread(int threadId, int maxIterations) {
     synchronizeAllThreads();
 
 	// end of the first iteration
-    // ... now do everything in the same way as in the superclass
-    // TODO ... I can probably call the superClass with maxIterations - 1
-    //      ... with the cost of k^2 distance calculations for s[]
 
-    while ((iterations < maxIterations) && ! converged) {
-        ++iterations;
-
-        synchronizeAllThreads();
-
-        for (int i = startNdx; i < endNdx; ++i) {
-            unsigned short closest = assignment[i];
-
-            double upper_comparison_bound = std::max(s[closest], lower[i]);
-
-            if (upper[i] <= upper_comparison_bound) {
-                continue;
-            }
-
-            double u2 = pointCenterDist2(i, closest);
-            upper[i] = sqrt(u2);
-
-            if (upper[i] <= upper_comparison_bound) {
-                continue;
-            }
-
-            double l2 = std::numeric_limits<double>::max(); // the squared lower bound
-			for(int* ptr = neighbours[closest]; (*ptr) != -1; ++ptr) {
-                double dist2 = pointCenterDist2(i, (*ptr));
-
-                if (dist2 < u2) {
-                    l2 = u2;
-                    u2 = dist2;
-                    closest = (*ptr);
-                } else if (dist2 < l2) {
-                    l2 = dist2;
-                }
-            }
-
-            lower[i] = sqrt(l2);
-
-            if (assignment[i] != closest) {
-                upper[i] = sqrt(u2);
-                changeAssignment(i, closest, threadId);
-            }
-        }
-
-        verifyAssignment(iterations, startNdx, endNdx);
-
-        synchronizeAllThreads();
-        if (threadId == 0) {
-            int furthestMovingCenter = move_centers();
-            converged = (0.0 == centerMovement[furthestMovingCenter]);
-        }
-
-        synchronizeAllThreads();
-
-        if (! converged) {
-            update_bounds(startNdx, endNdx);
-        }
-
-        synchronizeAllThreads();
-    }
-
-    return iterations;
+    // ... now do everything in the same way as we did before
+    // therefore call the superclass
+    // note that this implementation costs us unnecessary k*k-k distance calculations
+    // on update_s() function - this k*(k-1) distances can be eliminated by the change
+    return HamerlyKmeansNeighbors::runThread(threadId, maxIterations - 1) + 1;
 }
