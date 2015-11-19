@@ -128,12 +128,11 @@ int HeapKmeansUBarrNeighbors::runThread(int threadId, int maxIterations)
 		verifyAssignment(iterations, start(threadId), end(threadId));
 
 		synchronizeAllThreads();
-		if(threadId == 0)
-		{
-			int furthestMoving = move_centers();
-			converged = (0.0 == centerMovement[furthestMoving]);
+		move_centers(threadId);
+
+        synchronizeAllThreads();
+        if(threadId == 0 && !converged)
 			update_bounds();
-		}
 
 		synchronizeAllThreads();
 	}

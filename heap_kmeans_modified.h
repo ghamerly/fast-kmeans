@@ -44,7 +44,7 @@ protected:
 	// this method is overridden, takes as maximum upper bound the
 	// maximum upper bound from the first iteration increased in
 	// each iteration by the center movement
-	virtual void calculate_max_upper_bound();
+	virtual void calculate_max_upper_bound(int threadId);
 
 	Heap **heaps;
 

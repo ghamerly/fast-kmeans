@@ -33,7 +33,7 @@ protected:
 
 	// override this as we are calculating each bound explicitly
 	// this is different from the default implemntation
-	virtual void calculate_lower_bound_update();
+	virtual void calculate_lower_bound_update(int threadId);
 
 	virtual int runThread(int threadId, int maxIterations);
 

@@ -29,8 +29,9 @@ void ElkanKmeansNeighborsRel::initialize(Dataset const *aX, unsigned short aK, u
 	std::fill(lowerRel, lowerRel + k*k, 0.0);
 }
 
-void ElkanKmeansNeighborsRel::calculate_max_upper_bound() {
-    ElkanKmeansNeighbors::calculate_max_upper_bound();
+void ElkanKmeansNeighborsRel::calculate_max_upper_bound(int threadId) {
+    ElkanKmeansNeighbors::calculate_max_upper_bound(threadId);
+    synchronizeAllThreads();
     // do not forget that the upper bound array is smaller by upperRel
     addVectors(maxUpperBound, upperRel, k);
 }
@@ -125,17 +126,11 @@ int ElkanKmeansNeighborsRel::runThread(int threadId, int maxIterations)
 
 		// ELKAN 4, 5, AND 6
 		synchronizeAllThreads();
-		if(threadId == 0)
-		{
-			int furthestMovingCenter = move_centers();
-			converged = (0.0 == centerMovement[furthestMovingCenter]);
-		}
+        move_centers(threadId);
 
 		synchronizeAllThreads();
-		if(!converged)
-		{
+		if(threadId == 0 && !converged)
 			update_bounds(startNdx, endNdx);
-		}
 		synchronizeAllThreads();
 	}
 

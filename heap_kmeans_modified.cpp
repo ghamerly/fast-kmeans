@@ -127,12 +127,11 @@ int HeapKmeansModified::runThread(int threadId, int maxIterations)
 		verifyAssignment(iterations, start(threadId), end(threadId));
 
 		synchronizeAllThreads();
-		if(threadId == 0)
-		{
-			int furthestMoving = move_centers();
-			converged = (0.0 == centerMovement[furthestMoving]);
+		move_centers(threadId);
+
+        synchronizeAllThreads();
+        if(threadId == 0 && !converged)
 			update_bounds();
-		}
 
 		synchronizeAllThreads();
 	}
@@ -156,4 +155,4 @@ void HeapKmeansModified::update_bounds()
 }
 
 // do not do anything, we will update maximum upper bound in update_bounds
-void HeapKmeansModified::calculate_max_upper_bound() {}
+void HeapKmeansModified::calculate_max_upper_bound(int threadId) {}

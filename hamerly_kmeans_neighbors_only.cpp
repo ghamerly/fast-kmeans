@@ -8,29 +8,36 @@
 #include "general_functions.h"
 #include <cmath>
 
-int HamerlyKmeansNeighborsOnly::move_centers()
+void HamerlyKmeansNeighborsOnly::move_centers(int threadId)
 {
-    // move the centers
-	int furthestMovingCenter = TriangleInequalityBaseKmeans::move_centers();
+    if(threadId == 0)
+    {
+        // move the centers
+        int furthestMovingCenter = TriangleInequalityBaseKmeans::move_centers();
+        converged = (0.0 == centerMovement[furthestMovingCenter]);
+    }
+    synchronizeAllThreads();
 
-    // if not converged ...
-	if(centerMovement[furthestMovingCenter] != 0.0)
+	if(!converged)
 	{
         // ... calculate the neighbors and the lower bound update given by the triangle inequality
-		update_s(0);
-		calculate_max_upper_bound();
-        for(int i = 0; i < k; ++i)
-            calculate_neighbors(i);
-		calculate_lower_bound_update();
+		update_s(threadId);
+		calculate_max_upper_bound(threadId);
+        synchronizeAllThreads();
+        for (int i = 0; i < k; ++i)
+#ifdef USE_THREADS
+            if(i % numThreads == threadId)
+#endif
+                calculate_neighbors(i);
+        synchronizeAllThreads();
+		calculate_lower_bound_update(threadId);
 	}
-
-	return furthestMovingCenter;
 }
 
 /* This method fills the lower bound update array in the same manner as it
  * would be filled for the default Hamerly's kmeans implementation. The
  * code is copied from hamerly_kmeans.cpp with small modification. */
-void HamerlyKmeansNeighborsOnly::calculate_lower_bound_update()
+void HamerlyKmeansNeighborsOnly::calculate_lower_bound_update(int threadId)
 {
     int furthestMovingCenter = 0;
     double longest = centerMovement[furthestMovingCenter];

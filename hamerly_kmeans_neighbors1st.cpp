@@ -92,10 +92,7 @@ int HamerlyKmeansNeighbors1st::runThread(int threadId, int maxIterations) {
     verifyAssignment(iterations, startNdx, endNdx);
 
     synchronizeAllThreads();
-    if (threadId == 0) {
-        int furthestMovingCenter = move_centers();
-        converged = (0.0 == centerMovement[furthestMovingCenter]);
-    }
+    move_centers(threadId);
 
     synchronizeAllThreads();
 

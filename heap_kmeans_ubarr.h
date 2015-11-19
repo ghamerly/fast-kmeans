@@ -44,7 +44,7 @@ protected:
 
 	// When we will calculate the maximum upper bound, we will use the values
 	// stored in the *maxUBHeap to find the maximum of the upper bound
-	virtual void calculate_max_upper_bound();
+	virtual void calculate_max_upper_bound(int threadId);
 
 	// this will be set of k heaps, one for each centroid
 	// each heap will store a pair of upper bound and point index

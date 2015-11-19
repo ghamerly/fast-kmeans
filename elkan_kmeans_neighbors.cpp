@@ -84,13 +84,9 @@ int ElkanKmeansNeighbors::runThread(int threadId, int maxIterations)
 
 		// ELKAN 4, 5, AND 6
 		synchronizeAllThreads();
-		if(threadId == 0)
-		{
-			int furthestMovingCenter = move_centers();
-			converged = (0.0 == centerMovement[furthestMovingCenter]);
-		}
+        move_centers(threadId);
 
-		synchronizeAllThreads();
+        synchronizeAllThreads();
 		if(!converged)
 		{
 			update_bounds(startNdx, endNdx);
@@ -102,8 +98,11 @@ int ElkanKmeansNeighbors::runThread(int threadId, int maxIterations)
 }
 
 void ElkanKmeansNeighbors::filter_neighbors(int threadId) {
-    for (int c = 0; c < k; ++c) {
-        if(c % numThreads == threadId) {
+    for (int c = 0; c < k; ++c)
+#ifdef USE_THREADS
+        if(c % numThreads == threadId)
+#endif
+        {
             // use the stronger condition without s[c] on the left
             double boundOnOtherDistance = maxUpperBound[c] + centerMovement[c];
             int neighboursPos = 0;
@@ -115,5 +114,4 @@ void ElkanKmeansNeighbors::filter_neighbors(int threadId) {
 			}
 			neighbours[c][neighboursPos] = -1;
         }
-    }
 }

@@ -21,7 +21,7 @@ void HeapKmeansUBarr::free()
 /* Calculates the maximum upper bound over each cluster. This is achieved by
  * looking onto the top of the heaps that contain the upper bound.
  */
-void HeapKmeansUBarr::calculate_max_upper_bound()
+void HeapKmeansUBarr::calculate_max_upper_bound(int threadId)
 {
 	for (int c = 0; c < k; ++c)
 	{
@@ -186,12 +186,11 @@ int HeapKmeansUBarr::runThread(int threadId, int maxIterations)
 		verifyAssignment(iterations, start(threadId), end(threadId));
 
 		synchronizeAllThreads();
-		if(threadId == 0)
-		{
-			int furthestMoving = move_centers();
-			converged = (0.0 == centerMovement[furthestMoving]);
+		move_centers(threadId);
+
+        synchronizeAllThreads();
+        if(threadId == 0 && !converged)
 			update_bounds();
-		}
 
 		synchronizeAllThreads();
 	}

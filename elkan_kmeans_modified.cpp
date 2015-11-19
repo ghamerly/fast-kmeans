@@ -8,7 +8,7 @@
 #include "general_functions.h"
 #include <cmath>
 
-void ElkanKmeansModified::calculate_lower_bound_update()
+void ElkanKmeansModified::calculate_lower_bound_update(int threadId)
 {
 	// big C is the point for that we calculate the update
 	for (int C = 0; C < k; ++C)
@@ -109,11 +109,7 @@ int ElkanKmeansModified::runThread(int threadId, int maxIterations)
 
 		// ELKAN 4, 5, AND 6
 		synchronizeAllThreads();
-		if(threadId == 0)
-		{
-			int furthestMovingCenter = move_centers();
-			converged = (0.0 == centerMovement[furthestMovingCenter]);
-		}
+        move_centers(threadId);
 
 		synchronizeAllThreads();
 		if(!converged)

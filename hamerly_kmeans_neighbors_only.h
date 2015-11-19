@@ -26,11 +26,11 @@ class HamerlyKmeansNeighborsOnly : public HamerlyKmeansNeighbors {
     protected:
 		// we have to override this method in order to skip the tighter lower
 		// bound update calculation
-		virtual int move_centers();
+		virtual void move_centers(int threadId);
 
 		// here we need to consider only the centroid movement
 		// therefore we get the default update given by the triangle inequality
-		virtual void calculate_lower_bound_update();
+		virtual void calculate_lower_bound_update(int threadId);
 };
 
 #endif

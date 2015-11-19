@@ -33,10 +33,10 @@ protected:
 	virtual int runThread(int threadId, int maxIterations);
 
 	// now we have effectively to update k bounds, instead of n
-	void update_bounds(int startNdx, int endNdx);
+	virtual void update_bounds(int startNdx, int endNdx);
 
 	// the maximum upper bound needs to be updated by the relative movement
-	virtual void calculate_max_upper_bound();
+	virtual void calculate_max_upper_bound(int threadId);
 
 	// in those two arrays we will store how much the upper/lower bound
 	// is changed so that we do not need to update them, but only the accumulated

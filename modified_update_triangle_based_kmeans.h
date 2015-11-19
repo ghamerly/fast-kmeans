@@ -68,7 +68,7 @@ protected:
 	 * backup the old location of centroids and after movement we need to
 	 * calculate the tigher upper bound update and the neighbors set.
 	 */
-	virtual int move_centers();
+	virtual void move_centers(int threadId);
 
 	/* Calculates the lower bound update assuming that all the cached values
 	 * are properly calculated. This, default implementation assumes a single
@@ -77,18 +77,18 @@ protected:
 	 * algorithm and the annular algorithm. In the case of Elkan's algorithm
 	 * this method is implemented differently.
      */
-	virtual void calculate_lower_bound_update();
+	virtual void calculate_lower_bound_update(int threadId);
 
 	/* Updates the cached inner products. We cache for each centroid its new
 	 * norm, its old norm and also the inner product of the old centroid location
 	 * and the new centroid location.
      */
-	void update_cached_inner_products();
+	void update_cached_inner_products(int threadId);
 
 	/* Calculates the maximum upper bound by simple iteration over upper
 	 * bound array.
 	 */
-	virtual void calculate_max_upper_bound();
+	virtual void calculate_max_upper_bound(int threadId);
 
 	/* Comarator of two points by their movement. The points that have moved
 	 * more will be first if the standard order is used.
