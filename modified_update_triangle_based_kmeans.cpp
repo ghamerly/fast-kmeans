@@ -78,7 +78,11 @@ void ModifiedUpdateTriangleBasedKmeans::move_centers(int threadId)
 void ModifiedUpdateTriangleBasedKmeans::update_cached_inner_products(int threadId)
 {
     // copy the oldCentroids norms, we need to store this value
+#ifdef USE_THREADS
+    if(threadId == 0)
+#endif
     memcpy(oldCentroidsNorm2, centroidsNorm2, sizeof(double) * k);
+    synchronizeAllThreads();
 
     for (int c = 0; c < k; ++c) // for each centroid
 #ifdef USE_THREADS
@@ -93,6 +97,9 @@ void ModifiedUpdateTriangleBasedKmeans::update_cached_inner_products(int threadI
         }
 
     // sort centers by movemenet, use function center_movement_comparator_function as comparator
+#ifdef USE_THREAD
+    if(threadId == 0)
+#endif
     std::sort(centersByMovement.begin(), centersByMovement.end(), std::bind(&ModifiedUpdateTriangleBasedKmeans::center_movement_comparator_function, this, std::placeholders::_1, std::placeholders::_2));
 }
 
@@ -219,12 +226,15 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
 
 void ModifiedUpdateTriangleBasedKmeans::calculate_max_upper_bound(int threadId)
 {
-    // calculate over the array of upper bound and find maximum for each cluster
-    std::fill(maxUpperBound, maxUpperBound + k, 0.0);
-    // TODO parralelize this
-    for (int i = 0; i < n; ++i)
-        if(maxUpperBound[assignment[i]] < upper[i])
-            maxUpperBound[assignment[i]] = upper[i];
+    if(threadId == 0)
+    {
+        // calculate over the array of upper bound and find maximum for each cluster
+        std::fill(maxUpperBound, maxUpperBound + k, 0.0);
+        // TODO parralelize this
+        for (int i = 0; i < n; ++i)
+            if(maxUpperBound[assignment[i]] < upper[i])
+                maxUpperBound[assignment[i]] = upper[i];
+    }
 }
 
 bool ModifiedUpdateTriangleBasedKmeans::center_movement_comparator_function(int c1, int c2)

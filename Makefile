@@ -15,7 +15,7 @@ CPPFLAGS += -std=c++0x
 
 # To use pthreads, uncomment both lines below.
 #CPPFLAGS += -DUSE_THREADS
-#LDFLAGS += -lpthread
+#CPPFLAGS += -lpthread
 
 # Monitor internal algorithm effectiveness
 #CPPFLAGS += -DCOUNT_DISTANCES
