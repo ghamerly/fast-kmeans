@@ -29,6 +29,7 @@ int HamerlyKmeansNeighbors1st::runThread(int threadId, int maxIterations) {
     // here we need to calculate s & the centroid-centroid distances before the first iteration
     // the remaining calls to this method are hidden by move_centers
 	update_s(threadId);
+    synchronizeAllThreads();
 
     ++iterations;
 
@@ -38,22 +39,28 @@ int HamerlyKmeansNeighbors1st::runThread(int threadId, int maxIterations) {
         unsigned short closest = assignment[i];
 		upper[i] = sqrt(pointCenterDist2(i, closest));
         // also evaluate the maximum upper bound
+        // TODO paralelize
 		if(upper[i] > maxUpperBound[closest])
 			maxUpperBound[closest] = upper[i];
 	}
 
 	// now get the neighbours, but we cannot use the superclass as centroids have
     // not moved yet, therefore there is no centerMovement
-	for(int C = 0; C < k; ++C) {
-		double boundOnOtherDistance = maxUpperBound[C] + s[C];
-		int neighboursPos = 0;
-		for (int c = 0; c < k; ++c)
-		{
-			if(c != C && boundOnOtherDistance >= centerCenterDistDiv2[C * k + c])
-				neighbours[C][neighboursPos++] = c;
-		}
-		neighbours[C][neighboursPos] = -1;
-	}
+	for(int C = 0; C < k; ++C)
+#ifdef USE_THREADS
+        if(C % numThreads == threadId))
+#endif
+            {
+                double boundOnOtherDistance = maxUpperBound[C] + s[C];
+                int neighboursPos = 0;
+                for (int c = 0; c < k; ++c)
+                {
+                    if(c != C && boundOnOtherDistance >= centerCenterDistDiv2[C * k + c])
+                        neighbours[C][neighboursPos++] = c;
+                }
+                neighbours[C][neighboursPos] = -1;
+            }
+    synchronizeAllThreads();
 
     for(int i = startNdx; i < endNdx; ++i) {
         unsigned short closest = assignment[i];

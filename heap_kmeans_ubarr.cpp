@@ -65,7 +65,8 @@ int HeapKmeansUBarr::runThread(int threadId, int maxIterations)
 
 	std::greater<std::pair<double, int>> heapComp;
 
-	update_s(0);
+	update_s(threadId);
+    synchronizeAllThreads();
 
 	while((iterations < maxIterations) && !converged)
 	{

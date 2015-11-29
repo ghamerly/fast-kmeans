@@ -24,11 +24,10 @@ int HamerlyKmeansNeighbors::runThread(int threadId, int maxIterations) {
     // here we need to calculate s & the centroid-centroid distances before the first iteration
     // the remaining calls to this method are hidden by move_centers
 	update_s(threadId);
+    synchronizeAllThreads();
 
     while ((iterations < maxIterations) && ! converged) {
         ++iterations;
-
-        synchronizeAllThreads();
 
         for (int i = startNdx; i < endNdx; ++i) {
             unsigned short closest = assignment[i];

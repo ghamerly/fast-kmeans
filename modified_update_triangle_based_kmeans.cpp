@@ -73,6 +73,9 @@ void ModifiedUpdateTriangleBasedKmeans::move_centers(int threadId)
         synchronizeAllThreads();
         calculate_lower_bound_update(threadId); // and get the update
     }
+
+//    if(threadId == 0)
+//        std::cerr << lowerBoundUpdate[0] << std::endl;
 }
 
 void ModifiedUpdateTriangleBasedKmeans::update_cached_inner_products(int threadId)
@@ -81,7 +84,7 @@ void ModifiedUpdateTriangleBasedKmeans::update_cached_inner_products(int threadI
 #ifdef USE_THREADS
     if(threadId == 0)
 #endif
-    memcpy(oldCentroidsNorm2, centroidsNorm2, sizeof(double) * k);
+        memcpy(oldCentroidsNorm2, centroidsNorm2, sizeof(double) * k);
     synchronizeAllThreads();
 
     for (int c = 0; c < k; ++c) // for each centroid
@@ -97,10 +100,10 @@ void ModifiedUpdateTriangleBasedKmeans::update_cached_inner_products(int threadI
         }
 
     // sort centers by movemenet, use function center_movement_comparator_function as comparator
-#ifdef USE_THREAD
+#ifdef USE_THREADS
     if(threadId == 0)
 #endif
-    std::sort(centersByMovement.begin(), centersByMovement.end(), std::bind(&ModifiedUpdateTriangleBasedKmeans::center_movement_comparator_function, this, std::placeholders::_1, std::placeholders::_2));
+        std::sort(centersByMovement.begin(), centersByMovement.end(), std::bind(&ModifiedUpdateTriangleBasedKmeans::center_movement_comparator_function, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 /* This method does the aggregation of the updates so that we can

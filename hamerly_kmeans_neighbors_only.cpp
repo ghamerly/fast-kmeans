@@ -24,13 +24,14 @@ void HamerlyKmeansNeighborsOnly::move_centers(int threadId)
 		update_s(threadId);
 		calculate_max_upper_bound(threadId);
         synchronizeAllThreads();
-        for (int i = 0; i < k; ++i)
+        for (int c = 0; c < k; ++c)
 #ifdef USE_THREADS
-            if(i % numThreads == threadId)
+            if(c % numThreads == threadId)
 #endif
-                calculate_neighbors(i);
+                calculate_neighbors(c);
         synchronizeAllThreads();
-		calculate_lower_bound_update(threadId);
+        if(threadId == 0)
+		    calculate_lower_bound_update(threadId);
 	}
 }
 
