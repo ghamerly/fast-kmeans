@@ -35,9 +35,9 @@ class ModifiedUpdateTriangleBasedKmeans : public TriangleInequalityBaseKmeans {
 public:
 
 	ModifiedUpdateTriangleBasedKmeans() : oldCenters(NULL),
-	lowerBoundUpdate(NULL), maxUpperBound(NULL), oldCentroidsNorm2(NULL), centroidsNorm2(NULL),
-	oldNewCentroidInnerProduct(NULL), centerCenterDistDiv2(NULL),  neighbours(NULL) {
-	}
+	lowerBoundUpdate(NULL), maxUpperBound(NULL), maxUpperBoundAgg(NULL),
+	oldCentroidsNorm2(NULL), centroidsNorm2(NULL), 	oldNewCentroidInnerProduct(NULL),
+		centerCenterDistDiv2(NULL),  neighbours(NULL) {}
 
 	virtual ~ModifiedUpdateTriangleBasedKmeans() {
 		free();
@@ -136,6 +136,9 @@ protected:
 
 	/* Array for storing maximum upper bound per cluster. */
 	double *maxUpperBound;
+
+	/* Temporary array used for finding the maximal upper bound using multiple threads. */
+	double *maxUpperBoundAgg;
 
 	/* Norm of the centroids in the last iteration. */
 	double *oldCentroidsNorm2;

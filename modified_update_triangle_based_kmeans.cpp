@@ -22,6 +22,9 @@ void ModifiedUpdateTriangleBasedKmeans::free()
     delete oldCenters;
     delete [] lowerBoundUpdate;
     delete [] maxUpperBound;
+#ifdef USE_THREADS
+    delete [] maxUpperBoundAgg;
+#endif
     delete [] oldCentroidsNorm2;
     delete [] centroidsNorm2;
     delete [] oldNewCentroidInnerProduct;
@@ -30,6 +33,7 @@ void ModifiedUpdateTriangleBasedKmeans::free()
     oldCenters = NULL;
     lowerBoundUpdate = NULL;
     maxUpperBound = NULL;
+    maxUpperBoundAgg = NULL;
     oldCentroidsNorm2 = NULL;
     centroidsNorm2 = NULL;
     oldNewCentroidInnerProduct = NULL;
@@ -230,14 +234,25 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
 void ModifiedUpdateTriangleBasedKmeans::calculate_max_upper_bound(int threadId)
 {
     if(threadId == 0)
-    {
-        // calculate over the array of upper bound and find maximum for each cluster
         std::fill(maxUpperBound, maxUpperBound + k, 0.0);
-        // TODO parralelize this
-        for (int i = 0; i < n; ++i)
-            if(maxUpperBound[assignment[i]] < upper[i])
-                maxUpperBound[assignment[i]] = upper[i];
-    }
+#ifdef USE_THREADS
+    if(threadId == 0)
+        std::fill(maxUpperBoundAgg, maxUpperBoundAgg + k * numThreads, 0.0);
+    synchronizeAllThreads();
+    for(int i = 0; i < n; ++i)
+        if(maxUpperBoundAgg[threadId * k + assignment[i]] < upper[i])
+            maxUpperBoundAgg[threadId * k + assignment[i]] = upper[i];
+    for(int c = 0; c < k; ++c)
+        if(c % numThreads == threadId)
+            for(int tId = 0; tId < numThreads; tId++)
+                if(maxUpperBound[c] < maxUpperBoundAgg[tId * k + c])
+                    maxUpperBound[c] = maxUpperBoundAgg[tId * k + c];
+#else
+    // calculate over the array of upper bound and find maximum for each cluster
+    for (int i = 0; i < n; ++i)
+        if(maxUpperBound[assignment[i]] < upper[i])
+            maxUpperBound[assignment[i]] = upper[i];
+#endif
 }
 
 bool ModifiedUpdateTriangleBasedKmeans::center_movement_comparator_function(int c1, int c2)
@@ -286,6 +301,9 @@ void ModifiedUpdateTriangleBasedKmeans::initialize(Dataset const *aX, unsigned s
     // set length k if heap (numLB = 0), otherwise k*numLowerBounds
     lowerBoundUpdate = new double[k * (numLowerBounds == 0 ? 1 : numLowerBounds)];
     maxUpperBound = new double[k];
+#ifdef USE_THREADS
+    maxUpperBoundAgg = new double[k * aNumThreads];
+#endif
 
     // the cached inner products
     oldCentroidsNorm2 = new double[k];
