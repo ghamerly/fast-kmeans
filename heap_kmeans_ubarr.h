@@ -17,8 +17,6 @@
 #include <vector>
 #include <numeric>
 
-typedef std::vector<std::pair<double, int> > Heap;
-
 class HeapKmeansUBarr : public HeapKmeansModified {
 public:
 
@@ -49,7 +47,7 @@ protected:
 	// this will be set of k heaps, one for each centroid
 	// each heap will store a pair of upper bound and point index
 	// this allows us to find maximum over upper bound
-	Heap *maxUBHeap;
+	Heap **maxUBHeap;
 
 	// this array relativizes the upper bound, similarly as the
 	// heap key, so that we do not have to update all the n

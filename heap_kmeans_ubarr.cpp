@@ -12,6 +12,9 @@
 void HeapKmeansUBarr::free()
 {
 	HeapKmeansModified::free();
+    for (int t = 0; t < numThreads; ++t) {
+		delete [] maxUBHeap[t];
+	}
 	delete[] maxUBHeap;
 	delete[] ubHeapBounds;
 	maxUBHeap = NULL;
@@ -25,7 +28,7 @@ void HeapKmeansUBarr::calculate_max_upper_bound(int threadId)
 {
 	for (int c = 0; c < k; ++c)
 	{
-		Heap &heap = maxUBHeap[c];
+		Heap &heap = maxUBHeap[threadId][c];
 		while(heap.size() > 1)
 		{
             // look onto the top of the heap
@@ -46,16 +49,36 @@ void HeapKmeansUBarr::calculate_max_upper_bound(int threadId)
 		}
 
         // and do not forget that the upper bound is relative to the center movement history
-		maxUpperBound[c] = heap[0].first + ubHeapBounds[c];
+#ifdef USE_THREADS
+        // remember that in multithreaded version the size of the heap may be zero
+		maxUpperBoundAgg[threadId * k + c] = heap.empty() ? -1.0 : heap[0].first + ubHeapBounds[c];
+#else
+        maxUpperBound[c] = heap[0].first + ubHeapBounds[c];
+#endif
 	}
+
+#ifdef USE_THREADS
+    if(threadId == 0)
+        std::fill(maxUpperBound, maxUpperBound + k, 0.0);
+    synchronizeAllThreads();
+    for (int c = 0; c < k; ++c)
+        if(c % numThreads == threadId)
+            for (int tId = 0; tId < numThreads; tId++)
+                if(maxUpperBound[c] < maxUpperBoundAgg[tId * k + c])
+                    maxUpperBound[c] = maxUpperBoundAgg[tId * k + c];
+#endif
 }
 
 void HeapKmeansUBarr::initialize(Dataset const *aX, unsigned short aK, unsigned short *initialAssignment, int aNumThreads)
 {
 	HeapKmeansModified::initialize(aX, aK, initialAssignment, aNumThreads);
 
-	maxUBHeap = new Heap[k];
+	maxUBHeap = new Heap*[numThreads];
 	ubHeapBounds = new double[k];
+
+    for (int t = 0; t < numThreads; ++t) {
+        maxUBHeap[t] = new Heap[k];
+    }
 	std::fill(ubHeapBounds, ubHeapBounds + k, 0.0);
 }
 
@@ -128,7 +151,7 @@ int HeapKmeansUBarr::runThread(int threadId, int maxIterations)
 
                     // we have to store into the maxUBHeap as we need to ensure that
                     // *all* points are in this heap with at least some upper bound
-					Heap &ubHeap = maxUBHeap[closest];
+					Heap &ubHeap = maxUBHeap[threadId][closest];
 					ubHeap.push_back(std::make_pair(u - ubHeapBounds[closest], i));
 					std::push_heap(ubHeap.begin(), ubHeap.end());
 					continue;
@@ -167,7 +190,7 @@ int HeapKmeansUBarr::runThread(int threadId, int maxIterations)
 				{
                     // we need to make sure that all points are in ubHeap after 1st iteration
                     // or after the assignment change
-					Heap &ubHeap = maxUBHeap[closest];
+					Heap &ubHeap = maxUBHeap[threadId][closest];
 					ubHeap.push_back(std::make_pair(u - ubHeapBounds[closest], i));
 					std::push_heap(ubHeap.begin(), ubHeap.end());
 				}

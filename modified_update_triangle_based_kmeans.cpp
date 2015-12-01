@@ -242,6 +242,7 @@ void ModifiedUpdateTriangleBasedKmeans::calculate_max_upper_bound(int threadId)
     for(int i = 0; i < n; ++i)
         if(maxUpperBoundAgg[threadId * k + assignment[i]] < upper[i])
             maxUpperBoundAgg[threadId * k + assignment[i]] = upper[i];
+    synchronizeAllThreads();
     for(int c = 0; c < k; ++c)
         if(c % numThreads == threadId)
             for(int tId = 0; tId < numThreads; tId++)

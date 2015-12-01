@@ -69,7 +69,7 @@ int HeapKmeansUBarrNeighbors::runThread(int threadId, int maxIterations)
 					newHeap.push_back(std::make_pair(newLower, i));
 					std::push_heap(newHeap.begin(), newHeap.end(), heapComp);
 
-					Heap &ubHeap = maxUBHeap[closest];
+					Heap &ubHeap = maxUBHeap[threadId][closest];
 					ubHeap.push_back(std::make_pair(u - ubHeapBounds[closest], i));
 					std::push_heap(ubHeap.begin(), ubHeap.end());
 					continue;
@@ -109,7 +109,7 @@ int HeapKmeansUBarrNeighbors::runThread(int threadId, int maxIterations)
 
 				if(closest != assignment[i] || iterations == 1)
 				{
-					Heap &ubHeap = maxUBHeap[closest];
+					Heap &ubHeap = maxUBHeap[threadId][closest];
 					ubHeap.push_back(std::make_pair(u - ubHeapBounds[closest], i));
 					std::push_heap(ubHeap.begin(), ubHeap.end());
 				}
