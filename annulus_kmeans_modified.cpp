@@ -29,10 +29,10 @@ int AnnulusKmeansModified::runThread(int threadId, int maxIterations) {
 
     // here we need to calculate s & the centroid-centroid distances before the first iteration
     // the remaining calls to this method are hidden by move_centers
-	update_s(threadId);
+    update_s(threadId);
     synchronizeAllThreads();
 
-    while ((iterations < maxIterations) && ! converged) {
+    while ((iterations < maxIterations) && !converged) {
         ++iterations;
 
         if (threadId == 0) {
@@ -97,7 +97,7 @@ int AnnulusKmeansModified::runThread(int threadId, int maxIterations) {
         move_centers(threadId);
 
         synchronizeAllThreads();
-        if (! converged) {
+        if (!converged) {
             update_bounds(startNdx, endNdx);
         }
 

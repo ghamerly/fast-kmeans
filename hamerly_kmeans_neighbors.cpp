@@ -23,10 +23,10 @@ int HamerlyKmeansNeighbors::runThread(int threadId, int maxIterations) {
 
     // here we need to calculate s & the centroid-centroid distances before the first iteration
     // the remaining calls to this method are hidden by move_centers
-	update_s(threadId);
+    update_s(threadId);
     synchronizeAllThreads();
 
-    while ((iterations < maxIterations) && ! converged) {
+    while ((iterations < maxIterations) && !converged) {
         ++iterations;
 
         for (int i = startNdx; i < endNdx; ++i) {
@@ -47,7 +47,7 @@ int HamerlyKmeansNeighbors::runThread(int threadId, int maxIterations) {
 
             double l2 = std::numeric_limits<double>::max(); // the squared lower bound
             // iterate only over centroids that can be closest or second closest to some x in the dataset
-			for(int* ptr = neighbours[closest]; (*ptr) != -1; ++ptr) {
+            for (int* ptr = neighbours[closest]; (*ptr) != -1; ++ptr) {
                 double dist2 = pointCenterDist2(i, (*ptr));
 
                 if (dist2 < u2) {
@@ -74,7 +74,7 @@ int HamerlyKmeansNeighbors::runThread(int threadId, int maxIterations) {
 
         synchronizeAllThreads();
 
-        if (! converged) {
+        if (!converged) {
             update_bounds(startNdx, endNdx);
         }
 

@@ -22,10 +22,10 @@ int HamerlyKmeansModified::runThread(int threadId, int maxIterations) {
 
     // here we need to calculate s & the centroid-centroid distances before the first iteration
     // the remaining calls to this method are hidden by move_centers
-	update_s(threadId);
+    update_s(threadId);
     synchronizeAllThreads();
 
-    while ((iterations < maxIterations) && ! converged) {
+    while ((iterations < maxIterations) && !converged) {
         ++iterations;
 
         for (int i = startNdx; i < endNdx; ++i) {
@@ -46,7 +46,9 @@ int HamerlyKmeansModified::runThread(int threadId, int maxIterations) {
 
             double l2 = std::numeric_limits<double>::max(); // the squared lower bound
             for (int j = 0; j < k; ++j) {
-                if (j == closest) { continue; }
+                if (j == closest) {
+                    continue;
+                }
                 double dist2 = pointCenterDist2(i, j);
 
                 if (dist2 < u2) {
@@ -73,7 +75,7 @@ int HamerlyKmeansModified::runThread(int threadId, int maxIterations) {
 
         synchronizeAllThreads();
 
-        if (! converged) {
+        if (!converged) {
             update_bounds(startNdx, endNdx);
         }
 
@@ -83,12 +85,11 @@ int HamerlyKmeansModified::runThread(int threadId, int maxIterations) {
     return iterations;
 }
 
-
 void HamerlyKmeansModified::update_bounds(int startNdx, int endNdx) {
-#ifdef COUNT_DISTANCES
-	for(int i = 0; i < k; ++i)
-		boundsUpdates += ((double) clusterSize[0][i]) * (lowerBoundUpdate[i]);
-#endif
+    #ifdef COUNT_DISTANCES
+    for (int i = 0; i < k; ++i)
+        boundsUpdates += ((double) clusterSize[0][i]) * (lowerBoundUpdate[i]);
+    #endif
 
     // update upper/lower bounds
     for (int i = startNdx; i < endNdx; ++i) {
