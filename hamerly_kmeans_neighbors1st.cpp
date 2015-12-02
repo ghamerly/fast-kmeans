@@ -8,6 +8,7 @@
 #include "general_functions.h"
 #include <cmath>
 #include <iostream>
+#include <algorithm>
 
 /* This class implements Hamerly's algorithm together with tighter lower bound
  * update and iteration over neighbors (including the first iteration).
@@ -35,31 +36,50 @@ int HamerlyKmeansNeighbors1st::runThread(int threadId, int maxIterations) {
 
     // calculate the distance between each point and its assigned centroid
     // we would have to calculate this anyway
+    if (threadId == 0)
+        std::fill(maxUpperBound, maxUpperBound + k, 0.0);
+    #ifdef USE_THREADS
+    if (threadId == 0)
+        std::fill(maxUpperBoundAgg, maxUpperBoundAgg + k * numThreads, 0.0);
+    #endif
     for (int i = startNdx; i < endNdx; ++i) {
         unsigned short closest = assignment[i];
         upper[i] = sqrt(pointCenterDist2(i, closest));
+
         // also evaluate the maximum upper bound
-        // TODO paralelize
+        #ifdef USE_THREADS
+        if (maxUpperBoundAgg[threadId * k + closest] < upper[i])
+            maxUpperBoundAgg[threadId * k + closest] = upper[i];
+        #else
         if (upper[i] > maxUpperBound[closest])
             maxUpperBound[closest] = upper[i];
+        #endif
     }
+    #ifdef USE_THREADS
+    synchronizeAllThreads();
+    for (int c = 0; c < k; ++c)
+        if (c % numThreads == threadId)
+            for (int tId = 0; tId < numThreads; tId++)
+                if (maxUpperBound[c] < maxUpperBoundAgg[tId * k + c])
+                    maxUpperBound[c] = maxUpperBoundAgg[tId * k + c];
+    #endif
+    synchronizeAllThreads();
 
     // now get the neighbours, but we cannot use the superclass as centroids have
     // not moved yet, therefore there is no centerMovement
     for (int C = 0; C < k; ++C)
         #ifdef USE_THREADS
-
-                if (C % numThreads == threadId))
+        if (C % numThreads == threadId)
             #endif
-            {
-                double boundOnOtherDistance = maxUpperBound[C] + s[C];
-                int neighboursPos = 0;
-                for (int c = 0; c < k; ++c) {
-                    if (c != C && boundOnOtherDistance >= centerCenterDistDiv2[C * k + c])
-                        neighbours[C][neighboursPos++] = c;
-                }
-                neighbours[C][neighboursPos] = -1;
+        {
+            double boundOnOtherDistance = maxUpperBound[C] + s[C];
+            int neighboursPos = 0;
+            for (int c = 0; c < k; ++c) {
+                if (c != C && boundOnOtherDistance >= centerCenterDistDiv2[C * k + c])
+                    neighbours[C][neighboursPos++] = c;
             }
+            neighbours[C][neighboursPos] = -1;
+        }
     synchronizeAllThreads();
 
     for (int i = startNdx; i < endNdx; ++i) {
