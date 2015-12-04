@@ -6,11 +6,7 @@
 
 #include "modified_update_triangle_based_kmeans.h"
 #include "general_functions.h"
-#include <cassert>
-#include <limits>
 #include <cmath>
-#include <numeric>
-#include <iostream>
 #include <string.h>
 #include <algorithm>
 #include <functional>

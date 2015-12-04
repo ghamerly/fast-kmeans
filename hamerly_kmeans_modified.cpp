@@ -7,7 +7,6 @@
 #include "hamerly_kmeans_modified.h"
 #include "general_functions.h"
 #include <cmath>
-#include <iostream>
 
 /* This class is extension to Hamerly's algorithm with tighter lower bound update.
  *  - For information about Hamerly's algorithm see hamerly_kmeans.cpp

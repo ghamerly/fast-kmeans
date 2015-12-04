@@ -15,7 +15,6 @@
 
 #include "modified_update_triangle_based_kmeans.h"
 #include <vector>
-#include <numeric>
 
 typedef std::vector<std::pair<double, int> > Heap;
 

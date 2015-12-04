@@ -7,7 +7,6 @@
 #include "hamerly_kmeans_neighbors.h"
 #include "general_functions.h"
 #include <cmath>
-#include <iostream>
 
 /* This class implements Hamerly's algorithm together with tighter lower bound
  * update and iteration over neighbors.

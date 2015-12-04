@@ -15,7 +15,6 @@
 
 #include "heap_kmeans_modified.h"
 #include <vector>
-#include <numeric>
 
 class HeapKmeansUBarr : public HeapKmeansModified {
 public:

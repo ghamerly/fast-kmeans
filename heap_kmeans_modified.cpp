@@ -7,15 +7,8 @@
 #include "modified_update_triangle_based_kmeans.h"
 #include "general_functions.h"
 #include "heap_kmeans_modified.h"
-#include <cassert>
-#include <limits>
 #include <cmath>
-#include <numeric>
-#include <iostream>
-#include <string.h>
-#include <vector>
 #include <algorithm>
-#include <functional>
 
 void HeapKmeansModified::free() {
     ModifiedUpdateTriangleBasedKmeans::free();

@@ -14,7 +14,6 @@
 
 #include "heap_kmeans_ubarr.h"
 #include <vector>
-#include <numeric>
 
 typedef std::vector<std::pair<double, int> > Heap;
 
