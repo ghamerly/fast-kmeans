@@ -229,11 +229,7 @@ void ModifiedUpdateTriangleBasedKmeans::calculate_max_upper_bound(int threadId) 
         if (maxUpperBoundAgg[threadId * k + assignment[i]] < upper[i])
             maxUpperBoundAgg[threadId * k + assignment[i]] = upper[i];
     synchronizeAllThreads();
-    for (int c = 0; c < k; ++c)
-        if (c % numThreads == threadId)
-            for (int tId = 0; tId < numThreads; tId++)
-                if (maxUpperBound[c] < maxUpperBoundAgg[tId * k + c])
-                    maxUpperBound[c] = maxUpperBoundAgg[tId * k + c];
+    aggregate_maximum_upper_bound(threadId);
     #else
     // calculate over the array of upper bound and find maximum for each cluster
     for (int i = 0; i < n; ++i)
@@ -241,6 +237,17 @@ void ModifiedUpdateTriangleBasedKmeans::calculate_max_upper_bound(int threadId) 
             maxUpperBound[assignment[i]] = upper[i];
     #endif
 }
+
+#ifdef USE_THREADS
+// for each cluster: get maximum upper bound for each thread and find maximum
+void ModifiedUpdateTriangleBasedKmeans::aggregate_maximum_upper_bound(int threadId) {
+    for (int c = 0; c < k; ++c)
+        if (c % numThreads == threadId)
+            for (int tId = 0; tId < numThreads; tId++)
+                if (maxUpperBound[c] < maxUpperBoundAgg[tId * k + c])
+                    maxUpperBound[c] = maxUpperBoundAgg[tId * k + c];
+}
+#endif
 
 bool ModifiedUpdateTriangleBasedKmeans::center_movement_comparator_function(int c1, int c2) {
     return (centerMovement[c1] > centerMovement[c2]); // values must be decreaing

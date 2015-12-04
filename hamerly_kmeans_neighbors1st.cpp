@@ -57,11 +57,7 @@ int HamerlyKmeansNeighbors1st::runThread(int threadId, int maxIterations) {
     }
     #ifdef USE_THREADS
     synchronizeAllThreads();
-    for (int c = 0; c < k; ++c)
-        if (c % numThreads == threadId)
-            for (int tId = 0; tId < numThreads; tId++)
-                if (maxUpperBound[c] < maxUpperBoundAgg[tId * k + c])
-                    maxUpperBound[c] = maxUpperBoundAgg[tId * k + c];
+    aggregate_maximum_upper_bound(threadId);
     #endif
     synchronizeAllThreads();
 

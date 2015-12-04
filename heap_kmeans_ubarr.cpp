@@ -57,11 +57,7 @@ void HeapKmeansUBarr::calculate_max_upper_bound(int threadId) {
     if (threadId == 0)
         std::fill(maxUpperBound, maxUpperBound + k, 0.0);
     synchronizeAllThreads();
-    for (int c = 0; c < k; ++c)
-        if (c % numThreads == threadId)
-            for (int tId = 0; tId < numThreads; tId++)
-                if (maxUpperBound[c] < maxUpperBoundAgg[tId * k + c])
-                    maxUpperBound[c] = maxUpperBoundAgg[tId * k + c];
+    aggregate_maximum_upper_bound(threadId);
     #endif
 }
 
