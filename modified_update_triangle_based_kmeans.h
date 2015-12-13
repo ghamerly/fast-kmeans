@@ -50,7 +50,7 @@ public:
 	/* This function claculated inner product of two vectors of dimension d.
 	 * The number of inner products is counted in the superclass.
 	 */
-	virtual inline double inner_product(double *a, double const *b) {
+	inline double inner_product(const double *a, double const *b) const {
 #ifdef COUNT_DISTANCES
 		++numInnerProducts;
 #endif
