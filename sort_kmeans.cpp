@@ -32,14 +32,15 @@ int SortKmeans::runThread(int threadId, int maxIterations) {
         synchronizeAllThreads();
 
         for (int i = startNdx; i < endNdx; ++i) {
-            unsigned short closest = assignment[i];
+            unsigned short initial = assignment[i];
+            unsigned short closest = initial;
             
-            double minDistance = pointCenterDist2(i, closest);
+            double minDistance = pointCenterDist2(i, initial);
 
             for (int o = 1; o < k; ++o) {
-                if (minDistance < sortedCenters[closest * k + o].first) break;
+                if (minDistance < sortedCenters[initial * k + o].first) break;
 
-                const unsigned short j = sortedCenters[closest * k + o].second;
+                const unsigned short j = sortedCenters[initial * k + o].second;
             
                 const double distance = pointCenterDist2(i, j);
                 if (distance < minDistance) {
