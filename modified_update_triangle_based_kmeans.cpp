@@ -189,12 +189,12 @@ double ModifiedUpdateTriangleBasedKmeans::calculate_update(const unsigned int C,
         return update * cMovement;
     }
 
-    // this is the cae when the circle contains no point with a negative coordinate
+    // this is the case when the circle contains no point with a negative coordinate
     if (y > r) {
         if (!consider_negative)
             return 0.0;
         // Note that if the bottommost point of the sphere has y-coordinate
-        // from interval [0,1], we have to use update 0
+        // from interval [0,1], we can use update 0 (update from line 213 would be >0)
         if (y - r <= 1.0)
             return 0.0;
 
