@@ -180,6 +180,11 @@ int main(int argc, char **argv) {
             }
             assign(*x, *c, assignment);
             delete c;
+        } else if (command == "seed") {
+            // Read the random seed
+            int seed;
+            std::cin >> seed;
+            srand(seed);
         } else if (command == "lloyd" || command == "naive") {
             algorithm = new NaiveKmeans();
         } else if (command == "hamerly") {
