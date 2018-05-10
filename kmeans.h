@@ -86,6 +86,9 @@ class Kmeans {
             #error Counting distances and using multiple threads is not supported.
             #endif
         mutable long long numDistances;
+        mutable long long numInnerProducts;
+        mutable long long assignmentChanges;
+        mutable double boundsUpdates;
         #endif
 
     protected:

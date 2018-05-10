@@ -10,9 +10,12 @@
 #include <cmath>
 
 Kmeans::Kmeans() : x(NULL), n(0), k(0), d(0), numThreads(0), converged(false),
-    clusterSize(NULL), centerMovement(NULL), assignment(NULL) {
+clusterSize(NULL), centerMovement(NULL), assignment(NULL) {
     #ifdef COUNT_DISTANCES
     numDistances = 0;
+    numInnerProducts = 0;
+    assignmentChanges = 0;
+    boundsUpdates = 0.0;
     #endif
 }
 
@@ -27,8 +30,6 @@ void Kmeans::free() {
     assignment = NULL;
     n = k = d = numThreads = 0;
 }
-
-
 
 void Kmeans::initialize(Dataset const *aX, unsigned short aK, unsigned short *initialAssignment, int aNumThreads) {
     free();
@@ -61,10 +62,16 @@ void Kmeans::initialize(Dataset const *aX, unsigned short aK, unsigned short *in
 
     #ifdef COUNT_DISTANCES
     numDistances = 0;
+    numInnerProducts = 0;
+    assignmentChanges = 0;
+    boundsUpdates = 0.0;
     #endif
 }
 
 void Kmeans::changeAssignment(int xIndex, int closestCluster, int threadId) {
+    #ifdef COUNT_DISTANCES
+    ++assignmentChanges;
+    #endif
     --clusterSize[threadId][assignment[xIndex]];
     ++clusterSize[threadId][closestCluster];
     assignment[xIndex] = closestCluster;
@@ -72,19 +79,19 @@ void Kmeans::changeAssignment(int xIndex, int closestCluster, int threadId) {
 
 #ifdef USE_THREADS
 struct ThreadInfo {
-    public:
-        ThreadInfo() : km(NULL), threadId(0), pthread_id(0) {}
-        Kmeans *km;
-        int threadId;
-        pthread_t pthread_id;
-        int numIterations;
-        int maxIterations;
+public:
+    ThreadInfo() : km(NULL), threadId(0), pthread_id(0) {}
+    Kmeans *km;
+    int threadId;
+    pthread_t pthread_id;
+    int numIterations;
+    int maxIterations;
 };
 #endif
 
 void *Kmeans::runner(void *args) {
     #ifdef USE_THREADS
-    ThreadInfo *ti = (ThreadInfo *)args;
+    ThreadInfo *ti = (ThreadInfo *) args;
     ti->numIterations = ti->km->runThread(ti->threadId, ti->maxIterations);
     #endif
     return NULL;
@@ -151,11 +158,11 @@ void Kmeans::verifyAssignment(int iteration, int startNdx, int endNdx) const {
         // the program
         if (closest != assignment[i]) {
             std::cerr << "assignment error:" << std::endl;
-            std::cerr << "iteration             = " << iteration              << std::endl;
-            std::cerr << "point index           = " << i                      << std::endl;
-            std::cerr << "closest center        = " << closest                << std::endl;
-            std::cerr << "closest center dist2  = " << closest_dist2          << std::endl;
-            std::cerr << "assigned center       = " << assignment[i]          << std::endl;
+            std::cerr << "iteration             = " << iteration << std::endl;
+            std::cerr << "point index           = " << i << std::endl;
+            std::cerr << "closest center        = " << closest << std::endl;
+            std::cerr << "closest center dist2  = " << closest_dist2 << std::endl;
+            std::cerr << "assigned center       = " << assignment[i] << std::endl;
             std::cerr << "assigned center dist2 = " << original_closest_dist2 << std::endl;
             assert(false);
         }

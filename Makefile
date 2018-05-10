@@ -7,13 +7,15 @@ CPPFLAGS += -g
 CPPFLAGS += -O3
 CPPFLAGS += -Wno-long-long
 
+CPPFLAGS += -std=c++0x
+
 # Verify algorithm correctness while debugging
 #CPPFLAGS += -DDEBUG
 #CPPFLAGS += -DVERIFY_ASSIGNMENTS
 
 # To use pthreads, uncomment both lines below.
 #CPPFLAGS += -DUSE_THREADS
-#LDFLAGS += -lpthread
+#CPPFLAGS += -lpthread
 
 # Monitor internal algorithm effectiveness
 #CPPFLAGS += -DCOUNT_DISTANCES

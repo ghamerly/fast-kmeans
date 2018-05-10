@@ -37,10 +37,9 @@ class Dataset {
         // destroys the dataset safely
         ~Dataset() {
             n = d = nd = 0; 
-            double *dp = data, *sdsp = sumDataSquared;
+			delete [] data;
+			delete [] sumDataSquared;
             data = sumDataSquared = NULL;
-            delete [] dp;
-            delete [] sdsp;
         }
 
         // operator= is the standard deep-copy assignment operator, which
