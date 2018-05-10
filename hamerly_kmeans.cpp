@@ -32,7 +32,9 @@
  *      - update the lower bound for all (?) records:
  *          - lower(x) = lower(x) - d
  *
- * Parameters: none
+ * Parameters:
+ *   - threadId: the index of the thread that is running
+ *   - maxIterations: a bound on the number of iterations to perform
  *
  * Return value: the number of iterations performed (always at least 1)
  */
@@ -138,13 +140,20 @@ int HamerlyKmeans::runThread(int threadId, int maxIterations) {
  *  - finds the distances moved by the two furthest-moving centers
  *  - updates the upper/lower bounds for each record
  *
- * Parameters: none
+ * Parameters:
+ *  - startNdx: the first index of the dataset this thread is responsible for
+ *  - endNdx: one past the last index of the dataset this thread is responsible for
  */
 void HamerlyKmeans::update_bounds(int startNdx, int endNdx) {
+    double longest = centerMovement[0], secondLongest = (1 < k) ? centerMovement[1] : centerMovement[0];
     int furthestMovingCenter = 0;
-    double longest = centerMovement[furthestMovingCenter];
-    double secondLongest = 0.0;
-    for (int j = 0; j < k; ++j) {
+
+    if (longest < secondLongest) {
+        furthestMovingCenter = 1;
+        std::swap(longest, secondLongest);
+    }
+
+    for (int j = 2; j < k; ++j) {
         if (longest < centerMovement[j]) {
             secondLongest = longest;
             longest = centerMovement[j];

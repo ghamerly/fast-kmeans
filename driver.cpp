@@ -58,6 +58,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <unistd.h>
+#include <cstdlib>
 
 void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned short k, unsigned short const *assignment,
         int xcNdx, int numThreads, int maxIterations,
