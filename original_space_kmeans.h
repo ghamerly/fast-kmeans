@@ -29,6 +29,8 @@ class OriginalSpaceKmeans : public Kmeans {
         virtual double pointCenterInnerProduct(int xndx, unsigned short cndx) const;
         virtual double centerCenterInnerProduct(unsigned short c1ndx, unsigned short c2ndx) const;
 
+        virtual Dataset const *getCenters() const { return centers; }
+
     protected:
         // Move the centers to the average of their current assigned points,
         // compute the distance moved by each center, and return the index of

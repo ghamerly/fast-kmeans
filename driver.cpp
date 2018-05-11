@@ -61,6 +61,7 @@
 #include <cstdlib>
 
 void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned short k, unsigned short const *assignment,
+        unsigned short *outAssignment, Dataset *outCenters,
         int xcNdx, int numThreads, int maxIterations,
         std::vector<int> *numItersHistory
         #ifdef MONITOR_ACCURACY
@@ -73,6 +74,8 @@ int main(int argc, char **argv) {
     Dataset *x = NULL;
     unsigned short *assignment = NULL;
     unsigned short k;
+    unsigned short *outAssignment = NULL;
+    Dataset *outCenters = NULL;
 
     // The algorithm being used
     Kmeans *algorithm = NULL;
@@ -137,7 +140,11 @@ int main(int argc, char **argv) {
             // Allocate storage
             delete x;
             delete [] assignment;
+            delete [] outAssignment;
+            delete outCenters;
             assignment = NULL;
+            outAssignment = NULL;
+            outCenters = NULL;
             x = new Dataset(n, d);
 
             // Read the data values directly into the dataset
@@ -169,6 +176,10 @@ int main(int argc, char **argv) {
                 c = init_centers(*x, k);
             }
 
+            delete outCenters;
+            outCenters = new Dataset(k, x->d);
+            *outCenters = *c;
+
             if (! c) {
                 std::cerr << "Unrecognized initialization method: " << method << std::endl;
                 continue;
@@ -176,10 +187,10 @@ int main(int argc, char **argv) {
 
             delete [] assignment;
             assignment = new unsigned short[x->n];
-            for (int i = 0; i < x->n; ++i) {
-                assignment[i] = 0;
-            }
+            outAssignment = new unsigned short[x->n];
+            std::fill(assignment, assignment + x->n, 0);
             assign(*x, *c, assignment);
+            std::copy(assignment, assignment + x->n, outAssignment);
             delete c;
         } else if (command == "seed") {
             // Read the random seed
@@ -251,6 +262,20 @@ int main(int argc, char **argv) {
         } else if (command == "center") {
             std::cout << "centering dataset" << std::endl;
             centerDataset(x);
+        } else if (command == "dump_assignment") {
+            if (outAssignment) {
+                for (int i = 0; i < x->n; ++i) {
+                    std::cout << outAssignment[i] << std::endl;
+                }
+            } else {
+                std::cerr << "Error: no assignment available" << std::endl;
+            }
+        } else if (command == "dump_centers") {
+            if (outCenters) {
+                outCenters->print();
+            } else {
+                std::cerr << "Error: no centers available" << std::endl;
+            }
         } else if (command == "quit" || command == "exit") {
             break;
         } else {
@@ -258,7 +283,9 @@ int main(int argc, char **argv) {
         }
 
         if (algorithm) {
-            execute(command, algorithm, x, k, assignment, xcNdx, numThreads, maxIterations, &numItersHistory
+            execute(command, algorithm, x, k, assignment, 
+                    outAssignment, outCenters,
+                    xcNdx, numThreads, maxIterations, &numItersHistory
                     #ifdef MONITOR_ACCURACY
                     , &sseHistory
                     #endif
@@ -323,6 +350,7 @@ double elapsed_time(rusage *start) {
 }
 
 void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned short k, unsigned short const *assignment,
+        unsigned short *outAssignment, Dataset *outCenters,
         int xcNdx,
         int numThreads,
         int maxIterations,
@@ -353,7 +381,7 @@ void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned 
     std::cout << std::setw(35) << algorithm->getName() << "\t" << std::flush;
 
     // Make a working copy of the set of centers
-    unsigned short *workingAssignment = new unsigned short[x->n];
+    unsigned short *workingAssignment = outAssignment ? outAssignment : new unsigned short[x->n];
     std::copy(assignment, assignment + x->n, workingAssignment);
 
     // Time the execution and get the number of iterations
@@ -361,6 +389,14 @@ void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned 
     double start_clustering_wall_time = get_wall_time();
     algorithm->initialize(x, k, workingAssignment, numThreads);
     int iterations = algorithm->run(maxIterations);
+
+    if (outCenters) {
+        // try to grab the centers, if they exist
+        Dataset const *ctrs = algorithm->getCenters();
+        if (ctrs)
+            *outCenters = *ctrs;
+    }
+
     #ifdef COUNT_DISTANCES
     long long numDistances = algorithm->numDistances;
     #endif
@@ -403,6 +439,7 @@ void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned 
 
     std::cout << std::endl;
 
-    delete [] workingAssignment;
+    if (!outAssignment)
+        delete [] workingAssignment;
 }
 
