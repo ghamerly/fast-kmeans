@@ -88,6 +88,8 @@ class Kmeans {
         mutable long long numDistances;
         #endif
 
+        virtual Dataset const *getCenters() const { return NULL; }
+
     protected:
         // The dataset to cluster.
         const Dataset *x;

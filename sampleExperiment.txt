@@ -21,3 +21,5 @@ threads 8
 elkan
 annulus
 hamerly
+
+dump_centers
