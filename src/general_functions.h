@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <string>
+#include "dataset.h"
 
 /* Add together two vectors, and put the result in the first argument.
  * Calculates a = a + b
