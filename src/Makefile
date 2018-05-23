@@ -29,7 +29,7 @@ LIBOBJS = $(LIBSRC:.cpp=.o)
 
 KMEANSLIBRARY = libkmeans.a
 
-all: driver-experiment driver-standalone
+all: driver-experiment driver-standalone projection-test
 
 $(KMEANSLIBRARY): $(LIBOBJS)
 	ar -cq $(KMEANSLIBRARY) $(LIBOBJS)
@@ -39,6 +39,9 @@ driver-experiment: $(KMEANSLIBRARY) driver-experiment.o
 
 driver-standalone: $(KMEANSLIBRARY) driver-standalone.o
 	g++ -L . $(CPPFLAGS) $(LDFLAGS) driver-standalone.o -o driver-standalone -lkmeans
+
+projection-test: $(KMEANSLIBRARY) projection-test.o
+	g++ -L . $(CPPFLAGS) $(LDFLAGS) projection-test.o -o projection-test -lkmeans
 
 .PHONY: clean all
 

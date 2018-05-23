@@ -31,6 +31,7 @@ class Kmeans {
     
         // Get the cluster assignment for the given point index.
         int getAssignment(int xIndex) const { return assignment[xIndex]; }
+        unsigned short const *getAssignment() const { return assignment; }
 
         // Initialize the algorithm at the beginning of the run(), with the
         // given data and initial assignment. The parameter initialAssignment
