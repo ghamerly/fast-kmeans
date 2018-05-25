@@ -55,8 +55,6 @@
 #include <string>
 #include <map>
 #include <ctime>
-#include <sys/time.h>
-#include <sys/resource.h>
 #include <unistd.h>
 #include <cstdlib>
 
@@ -299,54 +297,6 @@ int main(int argc, char **argv) {
     delete [] assignment;
 
     return 0;
-}
-
-
-rusage get_time() {
-    rusage now;
-    getrusage(RUSAGE_SELF, &now);
-    return now;
-}
-
-
-double get_wall_time(){
-    struct timeval time;
-    if (gettimeofday(&time,NULL)){
-        //  Handle error
-        return 0;
-    }
-    return (double)time.tv_sec + (double)time.tv_usec * .000001;
-}
-
-int timeval_subtract(timeval *result, timeval *x, timeval *y) {
-    /* Perform the carry for the later subtraction by updating y. */
-    if (x->tv_usec < y->tv_usec) {
-        int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
-        y->tv_usec -= 1000000 * nsec;
-        y->tv_sec += nsec;
-    }
-    if (x->tv_usec - y->tv_usec > 1000000) {
-        int nsec = (x->tv_usec - y->tv_usec) / 1000000;
-        y->tv_usec += 1000000 * nsec;
-        y->tv_sec -= nsec;
-    }
-
-    /* Compute the time remaining to wait.  tv_usec is certainly positive. */
-    result->tv_sec = x->tv_sec - y->tv_sec;
-    result->tv_usec = x->tv_usec - y->tv_usec;
-
-    /* Return 1 if result
-     * is negative. */
-    return x->tv_sec < y->tv_sec;
-}
-
-double elapsed_time(rusage *start) {
-    rusage now;
-    timeval diff;
-    getrusage(RUSAGE_SELF, &now);
-    timeval_subtract(&diff, &now.ru_utime, &start->ru_utime);
-
-    return (double)diff.tv_sec + (double)diff.tv_usec / 1e6;
 }
 
 void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned short k, unsigned short const *assignment,

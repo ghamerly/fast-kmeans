@@ -12,6 +12,8 @@
 
 #include <iostream>
 #include <string>
+#include <sys/resource.h>
+#include <sys/time.h>
 #include "dataset.h"
 
 /* Add together two vectors, and put the result in the first argument.
@@ -77,6 +79,10 @@ void printArray(T const *arr, int length, std::string separator) {
 }
 
 double getMemoryUsage();
+rusage get_time();
+double get_wall_time();
+int timeval_subtract(timeval *result, timeval *x, timeval *y);
+double elapsed_time(rusage *start);
 
 void centerDataset(Dataset *x);
 
