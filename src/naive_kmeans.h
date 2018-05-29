@@ -15,8 +15,8 @@
 class NaiveKmeans : public OriginalSpaceKmeans {
     public:
         virtual std::string getName() const { return "naive"; }
-    protected:
         virtual ~NaiveKmeans() { free(); }
+    protected:
         virtual int runThread(int threadId, int maxIterations);
 };
 
