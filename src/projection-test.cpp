@@ -146,25 +146,38 @@ int main(int argc, char **argv) {
     int k = std::stoi(argv[3]);
     int projectDim = std::stoi(argv[4]);
 
+    auto start_time = get_time();
     Dataset *originalData = load_dataset(filename);
+    std::cout << "load dataset time: " << elapsed_time(&start_time) << std::endl;
+
     Kmeans *algorithm = get_algorithm(algorithm_name);
 
+    start_time = get_time();
     Dataset const *x = project_dataset(originalData, projectDim);
+    std::cout << "project dataset time: " << elapsed_time(&start_time) << std::endl;
+
+    start_time = get_time();
     Dataset *initialCenters = init_centers_kmeanspp_v2(*x, k);
+    std::cout << "k-means++ time: " << elapsed_time(&start_time) << std::endl;
+
     unsigned short *assignment = new unsigned short[x->n];
     assign(*x, *initialCenters, assignment);
     algorithm->initialize(x, k, assignment, 1);
-    algorithm->run(10000);
+    start_time = get_time();
+    auto projected_iterations = algorithm->run(10000);
+    std::cout << "projected k-means time: " << elapsed_time(&start_time) << " for " << projected_iterations << " iterations\n";
 
     std::cout << "\noriginalCenters\n";
     Dataset const *originalCenters = getOriginalCenters(*originalData, k, *algorithm);
-    std::cout << "with only projection " << kmeansObjective(*originalData, *originalCenters, *algorithm) << std::endl;
+    std::cout << "k-means objective with only projection " << kmeansObjective(*originalData, *originalCenters, *algorithm) << std::endl;
 
     // now cluster in the original space
     algorithm->initialize(originalData, k, assignment, 1); // FIXME -- we are abusing the reuse of assignment here
-    algorithm->run(20); // Severely limit the number of iterations to save time
+    start_time = get_time();
+    auto final_iterations = algorithm->run(20); // Severely limit the number of iterations to save time
     Dataset const *adjustedCenters = getOriginalCenters(*originalData, k, *algorithm);
-    std::cout << "after adjustment " << kmeansObjective(*originalData, *adjustedCenters, *algorithm) << std::endl;
+    std::cout << "original-space k-means time: " << elapsed_time(&start_time) << " for " << final_iterations << " iterations\n";
+    std::cout << "k-means objective after adjustment " << kmeansObjective(*originalData, *adjustedCenters, *algorithm) << std::endl;
 
     if (x != originalData)
         delete x;
