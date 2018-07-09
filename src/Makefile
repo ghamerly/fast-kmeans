@@ -24,7 +24,8 @@ CPPFLAGS += -std=c++11
 # Enable code profiling
 #CPPFLAGS += -pg
 
-LIBSRC = $(shell ls *.cpp | grep -v driver)
+# Source files for libkmeans, excluding files for Python module
+LIBSRC = $(shell ls *.cpp | grep -v driver | grep -v fastkmeans | grep -v py)
 LIBOBJS = $(LIBSRC:.cpp=.o)
 
 KMEANSLIBRARY = libkmeans.a
@@ -40,7 +41,11 @@ driver-experiment: $(KMEANSLIBRARY) driver-experiment.o
 driver-standalone: $(KMEANSLIBRARY) driver-standalone.o
 	g++ -L . $(CPPFLAGS) $(LDFLAGS) driver-standalone.o -o driver-standalone -lkmeans
 
+python-module: $(KMEANSLIBRARY)
+	python3 setup.py build_ext --inplace
+
 .PHONY: clean all
 
 clean:
-	rm -f $(KMEANSLIBRARY) driver-experiment driver-standalone *.o gmon.out
+	rm -f $(KMEANSLIBRARY) driver-experiment driver-standalone *.o gmon.out fastkmeans.*.so sampleScript.py
+	rm -rf build/
