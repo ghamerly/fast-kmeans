@@ -5,15 +5,15 @@
  */
 
 #include "dataset.h"
-#include <iostream>
+// #include <iostream>
 #include <iomanip>
 #include <cassert>
 #include <cstring>
 
 // print the dataset to standard output (cout), using formatting to keep the
 // data in matrix format
-void Dataset::print() const {
-    std::ostream &out = std::cout;
+void Dataset::print(std::ostream &out) const {
+    //std::ostream &out = std::cout;
     out.precision(6);
     int ndx = 0;
     for (int i = 0; i < n; ++i) {

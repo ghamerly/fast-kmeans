@@ -1,15 +1,18 @@
-#ifndef PY_ELKAN_H
-#define PY_ELKAN_H
+#ifndef PY_DRAKE_H
+#define PY_DRAKE_H
+
+/* Provides a wrapper for the DrakeKmeans class. See drake_kmeans.h for more
+ * detail.
+ */
 
 #include <Python.h>
 #include <structmember.h>
 
-#include "elkan_kmeans.h"
+#include "drake_kmeans.h"
 
 typedef struct {
     PyObject_HEAD
-    ElkanKmeans *instance;
-    // TODO make these visible, probably readonly
+    DrakeKmeans *instance;
     PyObject *dataset;
     PyObject *assignment;
 
@@ -17,10 +20,8 @@ typedef struct {
     // #ifdef COUNT_DISTANCES
     // long long num_distances;
     // #endif
-} ElkanObject;
+} DrakeObject;
 
-extern PyTypeObject ElkanType;
-
-void init_elkan_type_fields(void);
+extern PyTypeObject DrakeType;
 
 #endif

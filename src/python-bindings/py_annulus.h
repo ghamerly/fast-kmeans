@@ -1,14 +1,18 @@
-#ifndef PY_DRAKE_H
-#define PY_DRAKE_H
+#ifndef PY_ANNULUS_H
+#define PY_ANNULUS_H
+
+/* Provides a wrapper for the AnnulusKmeans class. See annulus_kmeans.h for more
+ * detail.
+ */
 
 #include <Python.h>
 #include <structmember.h>
 
-#include "drake_kmeans.h"
+#include "annulus_kmeans.h"
 
 typedef struct {
     PyObject_HEAD
-    DrakeKmeans *instance;
+    AnnulusKmeans *instance;
     // TODO make these visible, probably readonly
     PyObject *dataset;
     PyObject *assignment;
@@ -17,10 +21,8 @@ typedef struct {
     // #ifdef COUNT_DISTANCES
     // long long num_distances;
     // #endif
-} DrakeObject;
+} AnnulusObject;
 
-extern PyTypeObject DrakeType;
-
-void init_drake_type_fields(void);
+extern PyTypeObject AnnulusType;
 
 #endif

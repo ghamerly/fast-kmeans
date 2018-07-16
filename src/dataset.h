@@ -18,6 +18,7 @@
  */
 
 #include <cstddef>
+#include <iostream>
 
 class Dataset {
     public:
@@ -58,7 +59,7 @@ class Dataset {
 
         // print the dataset to standard output (cout), using formatting to keep the
         // data in matrix format
-        void print() const;
+        void print(std::ostream &out = std::cout) const;
 
         // n represents the number of records
         // d represents the dimension

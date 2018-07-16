@@ -1,17 +1,20 @@
-#include "py_sort.h"
-#include "py_dataset.h"
+/* CompareKmeans wrapper. The comment at the beginning of each function
+ * definition demonstrates its usage in Python.
+ */
+
+#include "py_compare.h"
+
 #include "py_assignment.h"
+#include "py_dataset.h"
 
-//#include "sort_kmeans.h"
 
-
-// Sort instance object
+// Compare instance object
 
 
 /*
 typedef struct {
     PyObject_HEAD
-    SortKmeans *instance;
+    CompareKmeans *instance;
 
     // TODO get_centers returns a constant Dataset, so if Dataset object is not
     // constant, this should convert it to const e.g. tuple of tuples
@@ -22,18 +25,17 @@ typedef struct {
     // #ifdef COUNT_DISTANCES
     // long long num_distances;
     // #endif
-} SortObject;
+} CompareObject;
 */
 
 
 // Object special methods
 
 
-static int Sort_init(SortObject *self) {
-    // Sort()
+static int Compare_init(CompareObject *self) {
+    // Compare()
 
-    self->instance = new SortKmeans();
-
+    self->instance = new CompareKmeans();
     Py_INCREF(Py_None);
     self->dataset = Py_None;
     Py_INCREF(Py_None);
@@ -42,9 +44,8 @@ static int Sort_init(SortObject *self) {
     return 0;
 }
 
-static void Sort_dealloc(SortObject *self) {
+static void Compare_dealloc(CompareObject *self) {
     delete self->instance;
-
     Py_DECREF(self->dataset);
     self->dataset = NULL;
     Py_DECREF(self->assignment);
@@ -57,8 +58,8 @@ static void Sort_dealloc(SortObject *self) {
 // Object properties
 
 
-static PyObject * Sort_get_centers(SortObject *self, void *closure) {
-    // a_sort.centers
+static PyObject * Compare_get_centers(CompareObject *self, void *closure) {
+    // a_compare.centers
 
     const Dataset *centers = self->instance->getCenters();
     if (centers == NULL) {
@@ -75,43 +76,45 @@ static PyObject * Sort_get_centers(SortObject *self, void *closure) {
 
     // Copy values from centers to preserve constness
 
-    // Dataset *newCenters = new Dataset(centers->n, centers->d);
     for (int i = 0; i < centers->nd; i++) {
-        //newCenters->data[i] = centers->data[i];
         centersObj->dataset->data[i] = centers->data[i];
     }
-
-    //centersObj->dataset = newCenters;
 
     return (PyObject *) centersObj;
 }
 
-static PyGetSetDef Sort_getsetters[] = {
-    // Readonly
-    {"centers", (getter) Sort_get_centers, NULL, "The set of centers"},
+static PyGetSetDef Compare_getsetters[] = {
+    {
+        const_cast<char *>("centers"),
+        (getter) Compare_get_centers,
+        NULL, // Setter
+        const_cast<char *>("The set of centers"),
+    },
     {NULL} // Sentinel
 };
 
 
-// SortKmeans methods
+// CompareKmeans methods
 
 
-static PyObject * Sort_free(SortObject *self) {
-    // Sort.free(self)
+static PyObject * Compare_free(CompareObject *self) {
+    // Compare.free(self)
 
     self->instance->free();
     Py_RETURN_NONE;
 }
 
-static PyObject * Sort_initialize(SortObject *self, PyObject *args,
+static PyObject * Compare_initialize(CompareObject *self, PyObject *args,
         PyObject *kwargs) {
-    // a_sort.initialize(x, k, initial_assignment, num_threads)
+    // a_compare.initialize(x, k, initial_assignment, num_threads)
 
     PyObject *x_orig, *initAssigns_orig;
     unsigned short k;
     int numThreads = 1;
 
-    char *kwlist[] = {"", "", "", "num_threads", NULL};
+    char *emptyStr = const_cast<char *>("");
+    char *kwlist[] = {emptyStr, emptyStr, emptyStr,
+        const_cast<char *>("num_threads"), NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!HO!|i", kwlist,
                 &DatasetType, &x_orig, &k, &AssignmentType, &initAssigns_orig,
@@ -119,10 +122,12 @@ static PyObject * Sort_initialize(SortObject *self, PyObject *args,
         return NULL;
     }
 
+    // Reassign dataset
     Py_DECREF(self->dataset);
     Py_INCREF(x_orig);
     self->dataset = x_orig;
 
+    // Reassign assignment
     Py_DECREF(self->assignment);
     Py_INCREF(initAssigns_orig);
     self->assignment = initAssigns_orig;
@@ -139,8 +144,8 @@ static PyObject * Sort_initialize(SortObject *self, PyObject *args,
     Py_RETURN_NONE;
 }
 
-static PyObject * Sort_get_name(SortObject *self) {
-    // a_sort.get_name()
+static PyObject * Compare_get_name(CompareObject *self) {
+    // a_compare.get_name()
 
     return PyUnicode_FromString(self->instance->getName().c_str());
 }
@@ -149,12 +154,11 @@ static PyObject * Sort_get_name(SortObject *self) {
 // OriginalSpaceKmeans methods
 
 
-static PyObject * Sort_point_point_inner_product(SortObject *self,
+static PyObject * Compare_point_point_inner_product(CompareObject *self,
         PyObject *args) {
-    // a_sort.point_point_inner_product(x1, x2)
+    // a_compare.point_point_inner_product(x1, x2)
 
     int x1ndx, x2ndx;
-
     if (!PyArg_ParseTuple(args, "ii", &x1ndx, &x2ndx)) {
         return NULL;
     }
@@ -164,13 +168,12 @@ static PyObject * Sort_point_point_inner_product(SortObject *self,
     return PyFloat_FromDouble(innerProd);
 }
 
-static PyObject * Sort_point_center_inner_product(SortObject *self,
+static PyObject * Compare_point_center_inner_product(CompareObject *self,
         PyObject *args) {
-    // a_sort.point_center_inner_product(xndx, cndx)
+    // a_compare.point_center_inner_product(xndx, cndx)
 
     int xndx;
     unsigned short cndx;
-
     if (!PyArg_ParseTuple(args, "iH", &xndx, &cndx)) {
         return NULL;
     }
@@ -180,12 +183,11 @@ static PyObject * Sort_point_center_inner_product(SortObject *self,
     return PyFloat_FromDouble(innerProd);
 }
 
-static PyObject * Sort_center_center_inner_product(SortObject *self,
+static PyObject * Compare_center_center_inner_product(CompareObject *self,
         PyObject *args) {
-    // a_sort.center_center_inner_product(c1, c2)
+    // a_compare.center_center_inner_product(c1, c2)
 
     unsigned short c1, c2;
-
     if (!PyArg_ParseTuple(args, "HH", &c1, &c2)) {
         return NULL;
     }
@@ -199,11 +201,11 @@ static PyObject * Sort_center_center_inner_product(SortObject *self,
 // Kmeans methods
 
 
-static PyObject * Sort_run(SortObject *self, PyObject *args,
+static PyObject * Compare_run(CompareObject *self, PyObject *args,
         PyObject *kwargs) {
-    // a_sort.run(max_iterations = 0)
+    // a_compare.run(max_iterations = 0)
 
-    static char *kwlist[] = {"max_iterations"};
+    static char *kwlist[] = {const_cast<char *>("max_iterations"), NULL};
     int maxIterations = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i", kwlist,
@@ -217,11 +219,10 @@ static PyObject * Sort_run(SortObject *self, PyObject *args,
     return PyLong_FromLong(numIterations);
 }
 
-static PyObject * Sort_get_assignment(SortObject *self, PyObject *args) {
-    // a_sort.get_assignment(xndx)
+static PyObject * Compare_get_assignment(CompareObject *self, PyObject *args) {
+    // a_compare.get_assignment(xndx)
 
     int xndx;
-
     if (!PyArg_ParseTuple(args, "i", &xndx)) {
         return NULL;
     }
@@ -231,11 +232,10 @@ static PyObject * Sort_get_assignment(SortObject *self, PyObject *args) {
     return PyLong_FromLong(assignment);
 }
 
-static PyObject * Sort_verify_assignment(SortObject *self, PyObject *args) {
-    // a_sort.verify_assignment(iteration, startndx, endndx)
+static PyObject * Compare_verify_assignment(CompareObject *self, PyObject *args) {
+    // a_compare.verify_assignment(iteration, startndx, endndx)
 
     int iteration, startNdx, endNdx;
-
     if (!PyArg_ParseTuple(args, "iii", &iteration, &startNdx, &endNdx)) {
         return NULL;
     }
@@ -243,18 +243,17 @@ static PyObject * Sort_verify_assignment(SortObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-static PyObject * Sort_get_sse(SortObject *self) {
-    // a_sort.get_sse()
+static PyObject * Compare_get_sse(CompareObject *self) {
+    // a_compare.get_sse()
 
     return PyFloat_FromDouble(self->instance->getSSE());
 }
 
-static PyObject * Sort_point_center_dist_2(SortObject *self, PyObject *args) {
-    // a_sort.point_center_dist_2( x1, cndx)
+static PyObject * Compare_point_center_dist_2(CompareObject *self, PyObject *args) {
+    // a_compare.point_center_dist_2( x1, cndx)
 
     int x1;
     unsigned short cndx;
-
     if (!PyArg_ParseTuple(args, "iH", &x1, &cndx)) {
         return NULL;
     }
@@ -264,11 +263,10 @@ static PyObject * Sort_point_center_dist_2(SortObject *self, PyObject *args) {
     return PyFloat_FromDouble(dist2);
 }
 
-static PyObject * Sort_center_center_dist_2(SortObject *self, PyObject *args) {
-    // a_sort.center_center_dist_2(c1, c2)
+static PyObject * Compare_center_center_dist_2(CompareObject *self, PyObject *args) {
+    // a_compare.center_center_dist_2(c1, c2)
 
     unsigned short c1, c2;
-
     if (!PyArg_ParseTuple(args, "HH", &c1, &c2)) {
         return NULL;
     }
@@ -279,70 +277,117 @@ static PyObject * Sort_center_center_dist_2(SortObject *self, PyObject *args) {
 }
 
 
-// Sort method definitions
+// Compare method definitions
 
 
-static PyMethodDef Sort_methods[] = {
-    {"run", (PyCFunction) Sort_run, METH_VARARGS | METH_KEYWORDS,
+static PyMethodDef Compare_methods[] = {
+    {"run", (PyCFunction) Compare_run, METH_VARARGS | METH_KEYWORDS,
         "Run threads until convergence or max iters, and returns num iters"},
-    {"free", (PyCFunction) Sort_free, METH_NOARGS, "Free the object's memory"},
-    {"initialize", (PyCFunction) Sort_initialize,
+    {"free", (PyCFunction) Compare_free, METH_NOARGS, "Free the object's memory"},
+    {"initialize", (PyCFunction) Compare_initialize,
         METH_VARARGS | METH_KEYWORDS,
         "Initialize algorithm at beginning of run() with given data and "
             "initial_assignment, which will be modified to contain final "
             "assignment of clusters"},
     {"point_point_inner_product",
-        (PyCFunction) Sort_point_point_inner_product,
+        (PyCFunction) Compare_point_point_inner_product,
         METH_VARARGS,
         "Compute inner product. Could be standard dot operator, or kernel "
             "function for more exotic applications."},
     {"point_center_inner_product",
-        (PyCFunction) Sort_point_center_inner_product,
+        (PyCFunction) Compare_point_center_inner_product,
         METH_VARARGS,
         "Compute inner product. Could be standard dot operator, or kernel "
             "function for more exotic applications."},
     {"center_center_inner_product",
-        (PyCFunction) Sort_center_center_inner_product,
+        (PyCFunction) Compare_center_center_inner_product,
         METH_VARARGS,
         "Compute inner product. Could be standard dot operator, or kernel "
             "function for more exotic applications."},
-    {"point_center_dist_2", (PyCFunction) Sort_point_center_dist_2,
+    {"point_center_dist_2", (PyCFunction) Compare_point_center_dist_2,
         METH_VARARGS,
         "Use the inner products to computer squared distances between a point "
             "and center."},
-    {"center_center_dist_2", (PyCFunction) Sort_center_center_dist_2,
+    {"center_center_dist_2", (PyCFunction) Compare_center_center_dist_2,
         METH_VARARGS,
         "Use the inner products to computer squared distances between two "
             "centers."},
-    {"get_assignment", (PyCFunction) Sort_get_assignment, METH_VARARGS,
+    {"get_assignment", (PyCFunction) Compare_get_assignment, METH_VARARGS,
         "Get the cluster assignment for the given point index"},
-    {"verify_assignment", (PyCFunction) Sort_verify_assignment, METH_VARARGS,
+    {"verify_assignment", (PyCFunction) Compare_verify_assignment, METH_VARARGS,
         "Verify that current assignment is correct, by checking every "
             "point-center distance. For debugging."},
-    {"get_sse", (PyCFunction) Sort_get_sse, METH_NOARGS,
+    {"get_sse", (PyCFunction) Compare_get_sse, METH_NOARGS,
         "Return the sum of squared errors for each cluster"},
-    {"get_name", (PyCFunction) Sort_get_name, METH_NOARGS,
+    {"get_name", (PyCFunction) Compare_get_name, METH_NOARGS,
         "Return the algorithm name"},
     {NULL} // Sentinel
 };
 
 
-// Sort type object
+// Compare type object
 
 
-PyTypeObject SortType = {
+PyTypeObject CompareType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-};
+    "fastkmeans.Compare", // tp_name
+    sizeof(CompareObject), // tp_basicsize
+    0, // tp_itemsize
 
-void init_sort_type_fields(void) {
-    SortType.tp_name = "fastkmeans.Sort";
-    SortType.tp_doc = "";
-    SortType.tp_basicsize = sizeof(SortObject);
-    SortType.tp_itemsize = 0;
-    SortType.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
-    SortType.tp_new = PyType_GenericNew;
-    SortType.tp_init = (initproc) Sort_init;
-    SortType.tp_dealloc = (destructor) Sort_dealloc;
-    SortType.tp_methods = Sort_methods;
-    SortType.tp_getset = Sort_getsetters;
+    (destructor) Compare_dealloc, // tp_dealloc
+    NULL, // tp_print
+    NULL, // tp_getattr
+    NULL, // tp_setattr
+    NULL, // tp_as_sync
+    NULL, // tp_repr
+
+    NULL, // tp_as_number
+    NULL, // tp_as_sequence
+    NULL, // tp_as_mapping
+
+    NULL, // tp_hash
+    NULL, // tp_call TODO ?
+    NULL, // tp_str
+    NULL, // tp_getattro
+    NULL, // tp_setattro
+
+    NULL, // tp_as_buffer
+
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, // tp_flags
+
+    "", // tp_doc
+
+    NULL, // tp_traverse
+
+    NULL, // tp_clear
+
+    NULL, // tp_richcompare
+
+    0, // tp_weaklistoffset
+
+    NULL, // tp_iter
+    NULL, // tp_iternext
+
+    Compare_methods, // tp_methods
+    NULL, // tp_members
+    Compare_getsetters, // tp_getset
+    NULL, // tp_base
+    NULL, // tp_dict
+    NULL, // tp_descr_get
+    NULL, // tp_descr_set
+    0, // tp_dictoffset
+    (initproc) Compare_init, // tp_init
+    PyType_GenericAlloc, // tp_alloc
+    PyType_GenericNew, // tp_new
+    NULL, // tp_free
+    NULL, // tp_is_gc
+    NULL, // tp_bases
+    NULL, // tp_mro
+    NULL, // tp_cache
+    NULL, // tp_subclasses
+    NULL, // tp_weaklist
+    NULL, // tp_del
+
+    0, // tp_version_tag
+    NULL, // tp_finalize
 };

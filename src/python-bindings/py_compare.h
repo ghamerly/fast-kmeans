@@ -1,6 +1,10 @@
 #ifndef PY_COMPARE_H
 #define PY_COMPARE_H
 
+/* Provides a wrapper for the CompareKmeans class. See compare_kmeans.h for more
+ * detail.
+ */
+
 #include <Python.h>
 #include <structmember.h>
 
@@ -9,7 +13,6 @@
 typedef struct {
     PyObject_HEAD
     CompareKmeans *instance;
-    // TODO make these visible, probably readonly
     PyObject *dataset;
     PyObject *assignment;
 
@@ -20,7 +23,5 @@ typedef struct {
 } CompareObject;
 
 extern PyTypeObject CompareType;
-
-void init_compare_type_fields(void);
 
 #endif

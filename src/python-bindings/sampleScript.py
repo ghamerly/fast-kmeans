@@ -18,7 +18,7 @@ maxiterations = 1000
 
 # Read in sample data
 
-with open('smallDataset.txt') as f:
+with open('../../smallDataset.txt') as f:
     text = f.readlines()
     n, d = map(int, text[0].strip().split())
     x = Dataset(n, d)
@@ -35,7 +35,8 @@ print('dimensions:', d)
 
 initial_ctrs = kmeans_plusplus(x, k)
 print('\ninitial centers (kmeans++):\n')
-initial_ctrs.print()
+# initial_ctrs.print()
+print(initial_ctrs)
 
 a = Assignment(n)
 
@@ -66,5 +67,6 @@ for alg in algorithms:
 
     centers = algorithm.centers
     print('\ncenters:\n')
-    centers.print()
+    # centers.print()
+    print(centers)
     print()

@@ -1,9 +1,12 @@
+/* Wrappers for the general_functions. The comment at the beginning of each
+ * function definition demonstrates its usage in Python.
+ */
+
 #include "py_fastkmeans_methods.h"
 
+#include "general_functions.h"
 #include "py_assignment.h"
 #include "py_dataset.h"
-
-#include "general_functions.h"
 
 // addVectors
 
@@ -29,7 +32,6 @@ static PyObject * init_centers_with_func(PyObject *self, PyObject *args,
         Dataset * (*init_func)(Dataset const &x, unsigned short k)) {
     PyObject *obj;
     unsigned short k;
-
     if (!PyArg_ParseTuple(args, "O!H", &DatasetType, &obj, &k)) {
         return NULL;
     }

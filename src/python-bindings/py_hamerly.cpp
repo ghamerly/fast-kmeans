@@ -1,8 +1,11 @@
-#include "py_hamerly.h"
-#include "py_dataset.h"
-#include "py_assignment.h"
+/* HamerlyKmeans wrapper. The comment at the beginning of each function
+ * definition demonstrates its usage in Python.
+ */
 
-//#include "hamerly_kmeans.h"
+#include "py_hamerly.h"
+
+#include "py_assignment.h"
+#include "py_dataset.h"
 
 
 // Hamerly instance object
@@ -31,7 +34,6 @@ static int Hamerly_init(HamerlyObject *self) {
     // Hamerly()
 
     self->instance = new HamerlyKmeans();
-
     Py_INCREF(Py_None);
     self->dataset = Py_None;
     Py_INCREF(Py_None);
@@ -42,7 +44,6 @@ static int Hamerly_init(HamerlyObject *self) {
 
 static void Hamerly_dealloc(HamerlyObject *self) {
     delete self->instance;
-
     Py_DECREF(self->dataset);
     self->dataset = NULL;
     Py_DECREF(self->assignment);
@@ -73,20 +74,20 @@ static PyObject * Hamerly_get_centers(HamerlyObject *self, void *closure) {
 
     // Copy values from centers to preserve constness
 
-    // Dataset *newCenters = new Dataset(centers->n, centers->d);
     for (int i = 0; i < centers->nd; i++) {
-        //newCenters->data[i] = centers->data[i];
         centersObj->dataset->data[i] = centers->data[i];
     }
-
-    //centersObj->dataset = newCenters;
 
     return (PyObject *) centersObj;
 }
 
 static PyGetSetDef Hamerly_getsetters[] = {
-    // Readonly
-    {"centers", (getter) Hamerly_get_centers, NULL, "The set of centers"},
+    {
+        const_cast<char *>("centers"),
+        (getter) Hamerly_get_centers,
+        NULL, // setter
+        const_cast<char *>("The set of centers")
+    },
     {NULL} // Sentinel
 };
 
@@ -119,18 +120,21 @@ static PyObject * Hamerly_initialize(HamerlyObject *self, PyObject *args,
     unsigned short k;
     int numThreads = 1;
 
-    char *kwlist[] = {"", "", "", "num_threads", NULL};
-
+    char *emptyStr = const_cast<char *>("");
+    char *kwlist[] = {emptyStr, emptyStr, emptyStr,
+        const_cast<char *>("num_threads"), NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!HO!|i", kwlist,
                 &DatasetType, &x_orig, &k, &AssignmentType, &initAssigns_orig,
                 &numThreads)) {
         return NULL;
     }
 
+    // Reassign datset
     Py_DECREF(self->dataset);
     Py_INCREF(x_orig);
     self->dataset = x_orig;
 
+    // Reassign assignment
     Py_DECREF(self->assignment);
     Py_INCREF(initAssigns_orig);
     self->assignment = initAssigns_orig;
@@ -156,7 +160,6 @@ static PyObject * Hamerly_point_point_inner_product(HamerlyObject *self,
     // a_hamerly.point_point_inner_product(x1, x2)
 
     int x1ndx, x2ndx;
-
     if (!PyArg_ParseTuple(args, "ii", &x1ndx, &x2ndx)) {
         return NULL;
     }
@@ -172,7 +175,6 @@ static PyObject * Hamerly_point_center_inner_product(HamerlyObject *self,
 
     int xndx;
     unsigned short cndx;
-
     if (!PyArg_ParseTuple(args, "iH", &xndx, &cndx)) {
         return NULL;
     }
@@ -187,7 +189,6 @@ static PyObject * Hamerly_center_center_inner_product(HamerlyObject *self,
     // a_hamerly.center_center_inner_product(c1, c2)
 
     unsigned short c1, c2;
-
     if (!PyArg_ParseTuple(args, "HH", &c1, &c2)) {
         return NULL;
     }
@@ -205,9 +206,8 @@ static PyObject * Hamerly_run(HamerlyObject *self, PyObject *args,
         PyObject *kwargs) {
     // a_hamerly.run(max_iterations = 0)
 
-    static char *kwlist[] = {"max_iterations"};
     int maxIterations = 0;
-
+    static char *kwlist[] = {const_cast<char *>("max_iterations"), NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i", kwlist,
                 &maxIterations)) {
         return NULL;
@@ -223,7 +223,6 @@ static PyObject * Hamerly_get_assignment(HamerlyObject *self, PyObject *args) {
     // a_hamerly.get_assignment(xndx)
 
     int xndx;
-
     if (!PyArg_ParseTuple(args, "i", &xndx)) {
         return NULL;
     }
@@ -237,7 +236,6 @@ static PyObject * Hamerly_verify_assignment(HamerlyObject *self, PyObject *args)
     // a_hamerly.verify_assignment(iteration, startndx, endndx)
 
     int iteration, startNdx, endNdx;
-
     if (!PyArg_ParseTuple(args, "iii", &iteration, &startNdx, &endNdx)) {
         return NULL;
     }
@@ -256,7 +254,6 @@ static PyObject * Hamerly_point_center_dist_2(HamerlyObject *self, PyObject *arg
 
     int x1;
     unsigned short cndx;
-
     if (!PyArg_ParseTuple(args, "iH", &x1, &cndx)) {
         return NULL;
     }
@@ -270,7 +267,6 @@ static PyObject * Hamerly_center_center_dist_2(HamerlyObject *self, PyObject *ar
     // a_hamerly.center_center_dist_2(c1, c2)
 
     unsigned short c1, c2;
-
     if (!PyArg_ParseTuple(args, "HH", &c1, &c2)) {
         return NULL;
     }
@@ -334,17 +330,64 @@ static PyMethodDef Hamerly_methods[] = {
 
 PyTypeObject HamerlyType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-};
+    "fastkmeans.Hamerly", // tp_name
+    sizeof(HamerlyObject), // tp_basicsize
+    0, // tp_itemsize
 
-void init_hamerly_type_fields(void) {
-    HamerlyType.tp_name = "fastkmeans.Hamerly";
-    HamerlyType.tp_doc = "";
-    HamerlyType.tp_basicsize = sizeof(HamerlyObject);
-    HamerlyType.tp_itemsize = 0;
-    HamerlyType.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
-    HamerlyType.tp_new = PyType_GenericNew;
-    HamerlyType.tp_init = (initproc) Hamerly_init;
-    HamerlyType.tp_dealloc = (destructor) Hamerly_dealloc;
-    HamerlyType.tp_methods = Hamerly_methods;
-    HamerlyType.tp_getset = Hamerly_getsetters;
+    (destructor) Hamerly_dealloc, // tp_dealloc
+    NULL, // tp_print
+    NULL, // tp_getattr
+    NULL, // tp_setattr
+    NULL, // tp_as_sync
+    NULL, // tp_repr
+
+    NULL, // tp_as_number
+    NULL, // tp_as_sequence
+    NULL, // tp_as_mapping
+
+    NULL, // tp_hash
+    NULL, // tp_call TODO ?
+    NULL, // tp_str
+    NULL, // tp_getattro
+    NULL, // tp_setattro
+
+    NULL, // tp_as_buffer
+
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, // tp_flags
+
+    "", // tp_doc
+
+    NULL, // tp_traverse
+
+    NULL, // tp_clear
+
+    NULL, // tp_richcompare
+
+    0, // tp_weaklistoffset
+
+    NULL, // tp_iter
+    NULL, // tp_iternext
+
+    Hamerly_methods, // tp_methods
+    NULL, // tp_members
+    Hamerly_getsetters, // tp_getset
+    NULL, // tp_base
+    NULL, // tp_dict
+    NULL, // tp_descr_get
+    NULL, // tp_descr_set
+    0, // tp_dictoffset
+    (initproc) Hamerly_init, // tp_init
+    PyType_GenericAlloc, // tp_alloc
+    PyType_GenericNew, // tp_new
+    NULL, // tp_free
+    NULL, // tp_is_gc
+    NULL, // tp_bases
+    NULL, // tp_mro
+    NULL, // tp_cache
+    NULL, // tp_subclasses
+    NULL, // tp_weaklist
+    NULL, // tp_del
+
+    0, // tp_version_tag
+    NULL, // tp_finalize
 };

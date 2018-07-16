@@ -1,15 +1,18 @@
-#ifndef PY_SORT_H
-#define PY_SORT_H
+#ifndef PY_NAIVE_H
+#define PY_NAIVE_H
+
+/* Provides a wrapper for the NaiveKmeans class. See naive_kmeans.h for more
+ * detail.
+ */
 
 #include <Python.h>
 #include <structmember.h>
 
-#include "sort_kmeans.h"
+#include "naive_kmeans.h"
 
 typedef struct {
     PyObject_HEAD
-    SortKmeans *instance;
-    // TODO make these visible, probably readonly
+    NaiveKmeans *instance;
     PyObject *dataset;
     PyObject *assignment;
 
@@ -17,10 +20,8 @@ typedef struct {
     // #ifdef COUNT_DISTANCES
     // long long num_distances;
     // #endif
-} SortObject;
+} NaiveObject;
 
-extern PyTypeObject SortType;
-
-void init_sort_type_fields(void);
+extern PyTypeObject NaiveType;
 
 #endif

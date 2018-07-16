@@ -1,3 +1,7 @@
+/* Assignment wrapper. The comment at the beginning of each function
+ * definition demonstrates its usage in Python.
+ */
+
 #include "py_assignment.h"
 
 #include <climits>
@@ -10,7 +14,7 @@ typedef struct {
 } AssignmentObject;
 */
 
-static int Assignment_init(AssignmentObject *self, PyObject *args) { //, PyObject *kwargs) {
+static int Assignment_init(AssignmentObject *self, PyObject *args) {
     // Assignment(n)
 
     int n;
@@ -30,19 +34,14 @@ static void Assignment_dealloc(AssignmentObject *self) {
     Py_TYPE(self)->tp_free((PyObject *) self);
 }
 
-// static PyObject * Assignment_get_n(AssignmentObject *self, void *closure) {
-    // Assignment.n
-    // return PyLong_FromLong(self->n);
-// }
-
-// static PyGetSetDef Assignment_getsetters[] = {
-    // {"n", (getter) Assignment_get_n, NULL, "number of records", NULL},
-    // {NULL} // Sentinel
-// };
-
 static PyMemberDef Assignment_members[] = {
-    {"n", T_INT, offsetof(AssignmentObject, n), READONLY, "The length of the "
-        "array of unsigned shorts"},
+    {
+        const_cast<char *>("n"),
+        T_INT,
+        offsetof(AssignmentObject, n),
+        READONLY,
+        const_cast<char *>("The length of the array of unsigned shorts"),
+    },
     {NULL} // Sentinel
 };
 
@@ -74,11 +73,13 @@ static PyObject * Assignment_fill(AssignmentObject *self, PyObject *o) {
     Py_RETURN_NONE;
 }
 
-// TODO add str (and repr?) methods to call Assignment::print w/ other ostream
-
 static PyMethodDef Assignment_methods[] = {
-    {"fill", (PyCFunction) Assignment_fill, METH_O, "Fill the entire "
-        "assignment with value"},
+    {
+        const_cast<char *>("fill"),
+        (PyCFunction) Assignment_fill,
+        METH_O,
+        const_cast<char *>("Fill the entire assignment with value"),
+    },
     {NULL} // Sentinel
 };
 
@@ -143,24 +144,69 @@ static PySequenceMethods Assignment_sequence_methods = {
     NULL,       // sq_ass_slice
     NULL,       // sq_contains
     NULL,       // sq_inplace_concat
-    NULL        // sq_inplace_repeat
+    NULL,       // sq_inplace_repeat
 };
 
 PyTypeObject AssignmentType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-};
+    "fastkmeans.Assignment", // tp_name
+    sizeof(AssignmentObject), // tp_basicsize
+    0, // tp_itemsize
 
-void init_assignment_type_fields(void) {
-    AssignmentType.tp_name = "fastkmeans.Assignment";
-    AssignmentType.tp_doc = "";
-    AssignmentType.tp_basicsize = sizeof(AssignmentObject);
-    AssignmentType.tp_itemsize = 0;
-    AssignmentType.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
-    AssignmentType.tp_new = PyType_GenericNew;
-    AssignmentType.tp_init = (initproc) Assignment_init;
-    AssignmentType.tp_dealloc = (destructor) Assignment_dealloc;
-    AssignmentType.tp_methods = Assignment_methods;
-    AssignmentType.tp_members = Assignment_members;
-    // AssignmentType.tp_getset = Assignment_getsetters;
-    AssignmentType.tp_as_sequence = &Assignment_sequence_methods;
-}
+    (destructor) Assignment_dealloc, // tp_dealloc
+    NULL, // tp_print
+    NULL, // tp_getattr
+    NULL, // tp_setattr
+    NULL, // tp_as_sync
+    NULL, // tp_repr
+
+    NULL, // tp_as_number
+    &Assignment_sequence_methods, // tp_as_sequence
+    NULL, // tp_as_mapping
+
+    NULL, // tp_hash
+    NULL, // tp_call TODO ?
+    NULL, // tp_str
+    NULL, // tp_getattro
+    NULL, // tp_setattro
+
+    NULL, // tp_as_buffer
+
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, // tp_flags
+
+    "", // tp_doc
+
+    NULL, // tp_traverse
+
+    NULL, // tp_clear
+
+    NULL, // tp_richcompare
+
+    0, // tp_weaklistoffset
+
+    NULL, // tp_iter
+    NULL, // tp_iternext
+
+    Assignment_methods, // tp_methods
+    Assignment_members, // tp_members
+    NULL, // tp_getset
+    NULL, // tp_base
+    NULL, // tp_dict
+    NULL, // tp_descr_get
+    NULL, // tp_descr_set
+    0, // tp_dictoffset
+    (initproc) Assignment_init, // tp_init
+    PyType_GenericAlloc, // tp_alloc
+    PyType_GenericNew, // tp_new
+    NULL, // tp_free
+    NULL, // tp_is_gc
+    NULL, // tp_bases
+    NULL, // tp_mro
+    NULL, // tp_cache
+    NULL, // tp_subclasses
+    NULL, // tp_weaklist
+    NULL, // tp_del
+
+    0, // tp_version_tag
+    NULL, // tp_finalize
+};

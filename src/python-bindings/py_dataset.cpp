@@ -1,8 +1,13 @@
+/* Dataset wrapper. The comment at the beginning of each function definition
+ * demonstrates its usage in Python.
+ */
+
 #include "py_dataset.h"
 
 // #include "dataset.h"
 
 #include <climits>
+#include <sstream>
 
 /*
 typedef struct {
@@ -15,8 +20,8 @@ static int Dataset_init(DatasetObject *self, PyObject *args, PyObject *kwargs) {
     // Dataset(aN, aD, keep_sds=False)
 
     int aN, aD, keepSDS = 0;
-    char *kwlist[] = {"", "", "keep_sds", NULL};
-
+    char *emptyStr = const_cast<char *>("");
+    char *kwlist[] = {emptyStr, emptyStr, const_cast<char *>("keep_sds"), NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ii|p", kwlist, &aN, &aD,
                 &keepSDS)) {
         return -1;
@@ -88,23 +93,11 @@ static int Dataset_set_d(DatasetObject *self, PyObject *value, void *closure) {
     return 0;
 }
 
-/*
-static PyObject * Dataset_get_nd(DatasetObject *self, void *closure) {
-    return PyLong_FromLong(self->dataset->nd);
-}
-
-static int Datset_set_nd(DatasetObject *self, PyObject *value, void *closure) {
-    PyErr_SetString(
-}
-*/
-
 static PyGetSetDef Dataset_getsetters[] = {
-    {"n", (getter) Dataset_get_n, (setter) Dataset_set_n, "number of records",
+    {const_cast<char *>("n"), (getter) Dataset_get_n, (setter) Dataset_set_n, const_cast<char *>("number of records"),
         NULL},
-    {"d", (getter) Dataset_get_d, (setter) Dataset_set_d, "dimension",
+    {const_cast<char *>("d"), (getter) Dataset_get_d, (setter) Dataset_set_d, const_cast<char *>("dimension"),
         NULL},
-    //{"nd", (getter) Dataset_get_nd, (setter) Dataset_set_nd, 
-        //"shortcut for n * d", NULL},
     {NULL} // Sentinel
 };
 
@@ -133,8 +126,6 @@ static PyObject * Dataset_fill(DatasetObject *self, PyObject *o) {
     Py_RETURN_NONE;
 }
 
-// TODO add str (and repr?) methods to call Dataset::print w/ other ostream
-
 static PyObject * Dataset_print(DatasetObject *self) {
     // a_dataset.print()
 
@@ -149,6 +140,14 @@ static PyMethodDef Dataset_methods[] = {
         "in matrix format"},
     {NULL} // Sentinel
 };
+
+static PyObject * Dataset_str(DatasetObject *self) {
+    // print(a_dataset)
+
+    std::stringstream out;
+    self->dataset->print(out);
+    return PyUnicode_FromString(out.str().c_str());
+}
 
 static Py_ssize_t Dataset_len(DatasetObject *self) {
     // len(a_dataset)
@@ -234,80 +233,64 @@ static PyMappingMethods Dataset_mapping_methods = {
 
 PyTypeObject DatasetType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    /*
-    tp_name = "";
-    tp_basicsize = 0;
-    tp_itemsize = 0;
+    "fastkmeans.Dataset", // tp_name = ""
+    sizeof(DatasetObject), // tp_basicsize = 0
+    0, // tp_itemsize = 0
 
-    tp_dealloc;
-    tp_print;
-    tp_getattr;
-    tp_setattr;
-    tp_as_sync;
-    tp_repr;
+    (destructor) Dataset_dealloc, // tp_dealloc
+    NULL, // tp_print
+    NULL, // tp_getattr
+    NULL, // tp_setattr
+    NULL, // tp_as_sync
+    NULL, // tp_repr
 
-    tp_as_number;
-    tp_as_sequence;
-    tp_as_mapping;
+    NULL, // tp_as_number
+    NULL, // tp_as_sequence
+    &Dataset_mapping_methods, // tp_as_mapping
 
-    tp_hash;
-    tp_call;
-    tp_str;
-    tp_getattro;
-    tp_setattro;
+    NULL, // tp_hash
+    NULL, // tp_call TODO ?
+    (reprfunc) Dataset_str, // tp_str
+    NULL, // tp_getattro
+    NULL, // tp_setattro
 
-    tp_as_buffer;
+    NULL, // tp_as_buffer
 
-    tp_flags;
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, // tp_flags
 
-    tp_doc;
+    "", // tp_doc
 
-    tp_traverse;
+    NULL, // tp_traverse
 
-    tp_clear;
+    NULL, // tp_clear
 
-    tp_richcompare;
+    NULL, // tp_richcompare
 
-    tp_weaklistoffset;
+    0, // tp_weaklistoffset
 
-    tp_iter;
-    tp_iternext;
+    NULL, // tp_iter
+    NULL, // tp_iternext
 
-    tp_methods;
-    tp_members;
-    tp_getset;
-    tp_base;
-    tp_dict;
-    tp_descr_get;
-    tp_descr_set;
-    tp_dictoffset;
-    tp_init;
-    tp_alloc;
-    tp_new;
-    tp_free;
-    tp_is_gc;
-    tp_bases;
-    tp_mro;
-    tp_cache;
-    tp_subclasses;
-    tp_weaklist;
-    tp_del;
+    Dataset_methods, // tp_methods
+    NULL, // tp_members
+    Dataset_getsetters, // tp_getset
+    NULL, // tp_base
+    NULL, // tp_dict
+    NULL, // tp_descr_get
+    NULL, // tp_descr_set
+    0, // tp_dictoffset
+    (initproc) Dataset_init, // tp_init
+    PyType_GenericAlloc, // tp_alloc
+    PyType_GenericNew, // tp_new
+    NULL, // tp_free
+    NULL, // tp_is_gc
+    NULL, // tp_bases
+    NULL, // tp_mro
+    NULL, // tp_cache
+    NULL, // tp_subclasses
+    NULL, // tp_weaklist
+    NULL, // tp_del
 
-    tp_version_tag;
-    tp_finalize;
-    */
+    0, // tp_version_tag
+    NULL, // tp_finalize
 };
-
-void init_dataset_type_fields(void) {
-    DatasetType.tp_name = "fastkmeans.Dataset";
-    DatasetType.tp_doc = "";
-    DatasetType.tp_basicsize = sizeof(DatasetObject);
-    DatasetType.tp_itemsize = 0;
-    DatasetType.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
-    DatasetType.tp_new = PyType_GenericNew;
-    DatasetType.tp_init = (initproc) Dataset_init;
-    DatasetType.tp_dealloc = (destructor) Dataset_dealloc;
-    DatasetType.tp_methods = Dataset_methods;
-    DatasetType.tp_getset = Dataset_getsetters;
-    DatasetType.tp_as_mapping = &Dataset_mapping_methods;
-}
