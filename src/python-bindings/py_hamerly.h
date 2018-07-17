@@ -1,6 +1,10 @@
 #ifndef PY_HAMERLY_H
 #define PY_HAMERLY_H
 
+/* Provides a wrapper for the HamerlyKmeans class. See hamerly_kmeans.h for more
+ * detail.
+ */
+
 #include <Python.h>
 #include <structmember.h>
 
@@ -9,7 +13,6 @@
 typedef struct {
     PyObject_HEAD
     HamerlyKmeans *instance;
-    // TODO make these visible, probably readonly
     PyObject *dataset;
     PyObject *assignment;
 
@@ -20,7 +23,5 @@ typedef struct {
 } HamerlyObject;
 
 extern PyTypeObject HamerlyType;
-
-void init_hamerly_type_fields(void);
 
 #endif

@@ -1,6 +1,9 @@
 #ifndef PY_DATASET_H
 #define PY_DATASET_H
 
+/* Provides a wrapper for the Dataset class. See dataset.h for more detail.
+ */
+
 #include <Python.h>
 #include <structmember.h>
 
@@ -12,7 +15,5 @@ typedef struct {
 } DatasetObject;
 
 extern PyTypeObject DatasetType;
-
-void init_dataset_type_fields(void);
 
 #endif

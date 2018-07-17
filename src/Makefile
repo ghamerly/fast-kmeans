@@ -42,10 +42,10 @@ driver-standalone: $(KMEANSLIBRARY) driver-standalone.o
 	g++ -L . $(CPPFLAGS) $(LDFLAGS) driver-standalone.o -o driver-standalone -lkmeans
 
 python-module: $(KMEANSLIBRARY)
-	python3 setup.py build_ext --inplace
+	cd python-bindings && python3 setup.py build_ext --inplace
 
 .PHONY: clean all
 
 clean:
-	rm -f $(KMEANSLIBRARY) driver-experiment driver-standalone *.o gmon.out fastkmeans.*.so sampleScript.py
-	rm -rf build/
+	rm -f $(KMEANSLIBRARY) driver-experiment driver-standalone *.o gmon.out python-bindings/fastkmeans.*.so
+	rm -rf python-bindings/build/

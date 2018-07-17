@@ -1,15 +1,18 @@
-#ifndef PY_HEAP_H
-#define PY_HEAP_H
+#ifndef PY_ELKAN_H
+#define PY_ELKAN_H
+
+/* Provides a wrapper for the ElkanKmeans class. See elkan_kmeans.h for more
+ * detail.
+ */
 
 #include <Python.h>
 #include <structmember.h>
 
-#include "heap_kmeans.h"
+#include "elkan_kmeans.h"
 
 typedef struct {
     PyObject_HEAD
-    HeapKmeans *instance;
-    // TODO make these visible, probably readonly
+    ElkanKmeans *instance;
     PyObject *dataset;
     PyObject *assignment;
 
@@ -17,10 +20,8 @@ typedef struct {
     // #ifdef COUNT_DISTANCES
     // long long num_distances;
     // #endif
-} HeapObject;
+} ElkanObject;
 
-extern PyTypeObject HeapType;
-
-void init_heap_type_fields(void);
+extern PyTypeObject ElkanType;
 
 #endif

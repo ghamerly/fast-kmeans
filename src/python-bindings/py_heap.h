@@ -1,14 +1,18 @@
-#ifndef PY_ANNULUS_H
-#define PY_ANNULUS_H
+#ifndef PY_HEAP_H
+#define PY_HEAP_H
+
+/* Provides a wrapper for the HeapKmeans class. See heap_kmeans.h for more
+ * detail.
+ */
 
 #include <Python.h>
 #include <structmember.h>
 
-#include "annulus_kmeans.h"
+#include "heap_kmeans.h"
 
 typedef struct {
     PyObject_HEAD
-    AnnulusKmeans *instance;
+    HeapKmeans *instance;
     // TODO make these visible, probably readonly
     PyObject *dataset;
     PyObject *assignment;
@@ -17,10 +21,8 @@ typedef struct {
     // #ifdef COUNT_DISTANCES
     // long long num_distances;
     // #endif
-} AnnulusObject;
+} HeapObject;
 
-extern PyTypeObject AnnulusType;
-
-void init_annulus_type_fields(void);
+extern PyTypeObject HeapType;
 
 #endif

@@ -1,17 +1,20 @@
-#include "py_compare.h"
-#include "py_dataset.h"
+/* NaiveKmeans wrapper. The comment at the beginning of each function definition
+ * demonstrates its usage in Python.
+ */
+
+#include "py_naive.h"
+
 #include "py_assignment.h"
+#include "py_dataset.h"
 
-//#include "compare_kmeans.h"
 
-
-// Compare instance object
+// Naive instance object
 
 
 /*
 typedef struct {
     PyObject_HEAD
-    CompareKmeans *instance;
+    NaiveKmeans *instance;
 
     // TODO get_centers returns a constant Dataset, so if Dataset object is not
     // constant, this should convert it to const e.g. tuple of tuples
@@ -22,18 +25,17 @@ typedef struct {
     // #ifdef COUNT_DISTANCES
     // long long num_distances;
     // #endif
-} CompareObject;
+} NaiveObject;
 */
 
 
 // Object special methods
 
 
-static int Compare_init(CompareObject *self) {
-    // Compare()
+static int Naive_init(NaiveObject *self) {
+    // Naive()
 
-    self->instance = new CompareKmeans();
-
+    self->instance = new NaiveKmeans();
     Py_INCREF(Py_None);
     self->dataset = Py_None;
     Py_INCREF(Py_None);
@@ -42,9 +44,8 @@ static int Compare_init(CompareObject *self) {
     return 0;
 }
 
-static void Compare_dealloc(CompareObject *self) {
+static void Naive_dealloc(NaiveObject *self) {
     delete self->instance;
-
     Py_DECREF(self->dataset);
     self->dataset = NULL;
     Py_DECREF(self->assignment);
@@ -57,8 +58,8 @@ static void Compare_dealloc(CompareObject *self) {
 // Object properties
 
 
-static PyObject * Compare_get_centers(CompareObject *self, void *closure) {
-    // a_compare.centers
+static PyObject * Naive_get_centers(NaiveObject *self, void *closure) {
+    // a_naive.centers
 
     const Dataset *centers = self->instance->getCenters();
     if (centers == NULL) {
@@ -75,54 +76,67 @@ static PyObject * Compare_get_centers(CompareObject *self, void *closure) {
 
     // Copy values from centers to preserve constness
 
-    // Dataset *newCenters = new Dataset(centers->n, centers->d);
     for (int i = 0; i < centers->nd; i++) {
-        //newCenters->data[i] = centers->data[i];
         centersObj->dataset->data[i] = centers->data[i];
     }
-
-    //centersObj->dataset = newCenters;
 
     return (PyObject *) centersObj;
 }
 
-static PyGetSetDef Compare_getsetters[] = {
-    // Readonly
-    {"centers", (getter) Compare_get_centers, NULL, "The set of centers"},
+static PyGetSetDef Naive_getsetters[] = {
+    {
+        const_cast<char *>("centers"),
+        (getter) Naive_get_centers,
+        NULL, //setter
+        const_cast<char *>("The set of centers")
+    },
     {NULL} // Sentinel
 };
 
 
-// CompareKmeans methods
+// NaiveKmeans methods
 
 
-static PyObject * Compare_free(CompareObject *self) {
-    // Compare.free(self)
+static PyObject * Naive_get_name(NaiveObject *self) {
+    // a_naive.get_name()
+
+    return PyUnicode_FromString(self->instance->getName().c_str());
+}
+
+
+// OriginalSpaceKmeans methods
+
+
+static PyObject * Naive_free(NaiveObject *self) {
+    // Naive.free(self)
 
     self->instance->free();
     Py_RETURN_NONE;
 }
 
-static PyObject * Compare_initialize(CompareObject *self, PyObject *args,
+static PyObject * Naive_initialize(NaiveObject *self, PyObject *args,
         PyObject *kwargs) {
-    // a_compare.initialize(x, k, initial_assignment, num_threads)
+    // a_naive.initialize(x, k, initial_assignment, num_threads)
 
     PyObject *x_orig, *initAssigns_orig;
     unsigned short k;
     int numThreads = 1;
 
-    char *kwlist[] = {"", "", "", "num_threads", NULL};
-
+    char *emptyStr = const_cast<char *>("");
+    char *kwlist[] = {emptyStr, emptyStr, emptyStr,
+        const_cast<char *>("num_threads"), NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!HO!|i", kwlist,
                 &DatasetType, &x_orig, &k, &AssignmentType, &initAssigns_orig,
                 &numThreads)) {
         return NULL;
     }
 
+    // Reassign datset
     Py_DECREF(self->dataset);
     Py_INCREF(x_orig);
     self->dataset = x_orig;
 
+    // Reassign assignment
     Py_DECREF(self->assignment);
     Py_INCREF(initAssigns_orig);
     self->assignment = initAssigns_orig;
@@ -139,22 +153,11 @@ static PyObject * Compare_initialize(CompareObject *self, PyObject *args,
     Py_RETURN_NONE;
 }
 
-static PyObject * Compare_get_name(CompareObject *self) {
-    // a_compare.get_name()
-
-    return PyUnicode_FromString(self->instance->getName().c_str());
-}
-
-
-// OriginalSpaceKmeans methods
-
-
-static PyObject * Compare_point_point_inner_product(CompareObject *self,
+static PyObject * Naive_point_point_inner_product(NaiveObject *self,
         PyObject *args) {
-    // a_compare.point_point_inner_product(x1, x2)
+    // a_naive.point_point_inner_product(x1, x2)
 
     int x1ndx, x2ndx;
-
     if (!PyArg_ParseTuple(args, "ii", &x1ndx, &x2ndx)) {
         return NULL;
     }
@@ -164,13 +167,12 @@ static PyObject * Compare_point_point_inner_product(CompareObject *self,
     return PyFloat_FromDouble(innerProd);
 }
 
-static PyObject * Compare_point_center_inner_product(CompareObject *self,
+static PyObject * Naive_point_center_inner_product(NaiveObject *self,
         PyObject *args) {
-    // a_compare.point_center_inner_product(xndx, cndx)
+    // a_naive.point_center_inner_product(xndx, cndx)
 
     int xndx;
     unsigned short cndx;
-
     if (!PyArg_ParseTuple(args, "iH", &xndx, &cndx)) {
         return NULL;
     }
@@ -180,12 +182,11 @@ static PyObject * Compare_point_center_inner_product(CompareObject *self,
     return PyFloat_FromDouble(innerProd);
 }
 
-static PyObject * Compare_center_center_inner_product(CompareObject *self,
+static PyObject * Naive_center_center_inner_product(NaiveObject *self,
         PyObject *args) {
-    // a_compare.center_center_inner_product(c1, c2)
+    // a_naive.center_center_inner_product(c1, c2)
 
     unsigned short c1, c2;
-
     if (!PyArg_ParseTuple(args, "HH", &c1, &c2)) {
         return NULL;
     }
@@ -199,29 +200,27 @@ static PyObject * Compare_center_center_inner_product(CompareObject *self,
 // Kmeans methods
 
 
-static PyObject * Compare_run(CompareObject *self, PyObject *args,
+static PyObject * Naive_run(NaiveObject *self, PyObject *args,
         PyObject *kwargs) {
-    // a_compare.run(max_iterations = 0)
+    // a_naive.run(max_iterations = 0)
 
-    static char *kwlist[] = {"max_iterations"};
     int maxIterations = 0;
-
+    static char *kwlist[] = {const_cast<char *>("max_iterations"), NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i", kwlist,
                 &maxIterations)) {
         return NULL;
     }
-
+    
     int numIterations = maxIterations > 0 ?
         self->instance->run(maxIterations) : self->instance->run();
 
     return PyLong_FromLong(numIterations);
 }
 
-static PyObject * Compare_get_assignment(CompareObject *self, PyObject *args) {
-    // a_compare.get_assignment(xndx)
+static PyObject * Naive_get_assignment(NaiveObject *self, PyObject *args) {
+    // a_naive.get_assignment(xndx)
 
     int xndx;
-
     if (!PyArg_ParseTuple(args, "i", &xndx)) {
         return NULL;
     }
@@ -231,11 +230,10 @@ static PyObject * Compare_get_assignment(CompareObject *self, PyObject *args) {
     return PyLong_FromLong(assignment);
 }
 
-static PyObject * Compare_verify_assignment(CompareObject *self, PyObject *args) {
-    // a_compare.verify_assignment(iteration, startndx, endndx)
+static PyObject * Naive_verify_assignment(NaiveObject *self, PyObject *args) {
+    // a_naive.verify_assignment(iteration, startndx, endndx)
 
     int iteration, startNdx, endNdx;
-
     if (!PyArg_ParseTuple(args, "iii", &iteration, &startNdx, &endNdx)) {
         return NULL;
     }
@@ -243,18 +241,17 @@ static PyObject * Compare_verify_assignment(CompareObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject * Compare_get_sse(CompareObject *self) {
-    // a_compare.get_sse()
+static PyObject * Naive_get_sse(NaiveObject *self) {
+    // a_naive.get_sse()
 
     return PyFloat_FromDouble(self->instance->getSSE());
 }
 
-static PyObject * Compare_point_center_dist_2(CompareObject *self, PyObject *args) {
-    // a_compare.point_center_dist_2( x1, cndx)
+static PyObject * Naive_point_center_dist_2(NaiveObject *self, PyObject *args) {
+    // a_naive.point_center_dist_2( x1, cndx)
 
     int x1;
     unsigned short cndx;
-
     if (!PyArg_ParseTuple(args, "iH", &x1, &cndx)) {
         return NULL;
     }
@@ -264,11 +261,10 @@ static PyObject * Compare_point_center_dist_2(CompareObject *self, PyObject *arg
     return PyFloat_FromDouble(dist2);
 }
 
-static PyObject * Compare_center_center_dist_2(CompareObject *self, PyObject *args) {
-    // a_compare.center_center_dist_2(c1, c2)
+static PyObject * Naive_center_center_dist_2(NaiveObject *self, PyObject *args) {
+    // a_naive.center_center_dist_2(c1, c2)
 
     unsigned short c1, c2;
-
     if (!PyArg_ParseTuple(args, "HH", &c1, &c2)) {
         return NULL;
     }
@@ -279,70 +275,117 @@ static PyObject * Compare_center_center_dist_2(CompareObject *self, PyObject *ar
 }
 
 
-// Compare method definitions
+// Naive method definitions
 
 
-static PyMethodDef Compare_methods[] = {
-    {"run", (PyCFunction) Compare_run, METH_VARARGS | METH_KEYWORDS,
+static PyMethodDef Naive_methods[] = {
+    {"run", (PyCFunction) Naive_run, METH_VARARGS | METH_KEYWORDS,
         "Run threads until convergence or max iters, and returns num iters"},
-    {"free", (PyCFunction) Compare_free, METH_NOARGS, "Free the object's memory"},
-    {"initialize", (PyCFunction) Compare_initialize,
+    {"free", (PyCFunction) Naive_free, METH_NOARGS, "Free the object's memory"},
+    {"initialize", (PyCFunction) Naive_initialize,
         METH_VARARGS | METH_KEYWORDS,
         "Initialize algorithm at beginning of run() with given data and "
             "initial_assignment, which will be modified to contain final "
             "assignment of clusters"},
     {"point_point_inner_product",
-        (PyCFunction) Compare_point_point_inner_product,
+        (PyCFunction) Naive_point_point_inner_product,
         METH_VARARGS,
         "Compute inner product. Could be standard dot operator, or kernel "
             "function for more exotic applications."},
     {"point_center_inner_product",
-        (PyCFunction) Compare_point_center_inner_product,
+        (PyCFunction) Naive_point_center_inner_product,
         METH_VARARGS,
         "Compute inner product. Could be standard dot operator, or kernel "
             "function for more exotic applications."},
     {"center_center_inner_product",
-        (PyCFunction) Compare_center_center_inner_product,
+        (PyCFunction) Naive_center_center_inner_product,
         METH_VARARGS,
         "Compute inner product. Could be standard dot operator, or kernel "
             "function for more exotic applications."},
-    {"point_center_dist_2", (PyCFunction) Compare_point_center_dist_2,
+    {"point_center_dist_2", (PyCFunction) Naive_point_center_dist_2,
         METH_VARARGS,
         "Use the inner products to computer squared distances between a point "
             "and center."},
-    {"center_center_dist_2", (PyCFunction) Compare_center_center_dist_2,
+    {"center_center_dist_2", (PyCFunction) Naive_center_center_dist_2,
         METH_VARARGS,
         "Use the inner products to computer squared distances between two "
             "centers."},
-    {"get_assignment", (PyCFunction) Compare_get_assignment, METH_VARARGS,
+    {"get_assignment", (PyCFunction) Naive_get_assignment, METH_VARARGS,
         "Get the cluster assignment for the given point index"},
-    {"verify_assignment", (PyCFunction) Compare_verify_assignment, METH_VARARGS,
+    {"verify_assignment", (PyCFunction) Naive_verify_assignment, METH_VARARGS,
         "Verify that current assignment is correct, by checking every "
             "point-center distance. For debugging."},
-    {"get_sse", (PyCFunction) Compare_get_sse, METH_NOARGS,
+    {"get_sse", (PyCFunction) Naive_get_sse, METH_NOARGS,
         "Return the sum of squared errors for each cluster"},
-    {"get_name", (PyCFunction) Compare_get_name, METH_NOARGS,
+    {"get_name", (PyCFunction) Naive_get_name, METH_NOARGS,
         "Return the algorithm name"},
     {NULL} // Sentinel
 };
 
 
-// Compare type object
+// Naive type object
 
 
-PyTypeObject CompareType = {
+PyTypeObject NaiveType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-};
+    "fastkmeans.Naive", // tp_name
+    sizeof(NaiveObject), // tp_basicsize
+    0, // tp_itemsize
 
-void init_compare_type_fields(void) {
-    CompareType.tp_name = "fastkmeans.Compare";
-    CompareType.tp_doc = "";
-    CompareType.tp_basicsize = sizeof(CompareObject);
-    CompareType.tp_itemsize = 0;
-    CompareType.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE;
-    CompareType.tp_new = PyType_GenericNew;
-    CompareType.tp_init = (initproc) Compare_init;
-    CompareType.tp_dealloc = (destructor) Compare_dealloc;
-    CompareType.tp_methods = Compare_methods;
-    CompareType.tp_getset = Compare_getsetters;
+    (destructor) Naive_dealloc, // tp_dealloc
+    NULL, // tp_print
+    NULL, // tp_getattr
+    NULL, // tp_setattr
+    NULL, // tp_as_sync
+    NULL, // tp_repr
+
+    NULL, // tp_as_number
+    NULL, // tp_as_sequence
+    NULL, // tp_as_mapping
+
+    NULL, // tp_hash
+    NULL, // tp_call TODO ?
+    NULL, // tp_str
+    NULL, // tp_getattro
+    NULL, // tp_setattro
+
+    NULL, // tp_as_buffer
+
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, // tp_flags
+
+    "", // tp_doc
+
+    NULL, // tp_traverse
+
+    NULL, // tp_clear
+
+    NULL, // tp_richcompare
+
+    0, // tp_weaklistoffset
+
+    NULL, // tp_iter
+    NULL, // tp_iternext
+
+    Naive_methods, // tp_methods
+    NULL, // tp_members
+    Naive_getsetters, // tp_getset
+    NULL, // tp_base
+    NULL, // tp_dict
+    NULL, // tp_descr_get
+    NULL, // tp_descr_set
+    0, // tp_dictoffset
+    (initproc) Naive_init, // tp_init
+    PyType_GenericAlloc, // tp_alloc
+    PyType_GenericNew, // tp_new
+    NULL, // tp_free
+    NULL, // tp_is_gc
+    NULL, // tp_bases
+    NULL, // tp_mro
+    NULL, // tp_cache
+    NULL, // tp_subclasses
+    NULL, // tp_weaklist
+    NULL, // tp_del
+
+    0, // tp_version_tag
+    NULL, // tp_finalize
 };
