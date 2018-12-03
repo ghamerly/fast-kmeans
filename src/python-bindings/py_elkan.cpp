@@ -75,9 +75,8 @@ static PyObject * Elkan_get_centers(ElkanObject *self, void *closure) {
     // Copy values from centers to preserve constness
 
     for (int i = 0; i < centers->nd; i++) {
-        //newCenters->data[i] = centers->data[i];
+        centersObj->dataset->data[i] = centers->data[i];
     }
-
 
     return (PyObject *) centersObj;
 }
