@@ -33,7 +33,7 @@ KMEANSLIBRARY = libkmeans.a
 all: driver-experiment driver-standalone
 
 $(KMEANSLIBRARY): $(LIBOBJS)
-	ar -cq $(KMEANSLIBRARY) $(LIBOBJS)
+	ar -cr $(KMEANSLIBRARY) $(LIBOBJS)
 
 driver-experiment: $(KMEANSLIBRARY) driver-experiment.o
 	g++ -L . $(CPPFLAGS) $(LDFLAGS) driver-experiment.o -o driver-experiment -lkmeans
