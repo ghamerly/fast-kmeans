@@ -67,6 +67,7 @@ Here is an example of a simple set of commands:
     elkan
     sort
     compare
+    mti
 
 
 ----------------------
@@ -104,3 +105,7 @@ Drake, Jonathan. "Faster k-means clustering." MS thesis, 2013.
 Hamerly, Greg, and Jonathan Drake. "Accelerating Lloyd's algorithm for k-means
 clustering." To appear in Partitional Clustering Algorithms, Springer, 2014.
 
+Mhembere, Disa, Da Zheng, Carey E. Priebe, Joshua T. Vogelstein, and Randal Burns.
+"knor: A NUMA-optimized in-memory, distributed and semi-external-memory k-means library."
+In Proceedings of the 26th International Symposium on High-Performance Parallel
+and Distributed Computing, pp. 67-78. ACM, 2017.
