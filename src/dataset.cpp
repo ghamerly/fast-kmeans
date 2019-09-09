@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <cassert>
 #include <cstring>
+#include <fstream>
 
 // print the dataset to standard output (cout), using formatting to keep the
 // data in matrix format
@@ -28,8 +29,8 @@ void Dataset::print(std::ostream &out) const {
 // "ndx"
 double &Dataset::operator()(int ndx, int dim) {
 #   ifdef DEBUG
-    assert(ndx < n); 
-    assert(dim < d); 
+    assert(ndx < n);
+    assert(dim < d);
 #   endif
     return data[ndx * d + dim];
 }
@@ -37,8 +38,8 @@ double &Dataset::operator()(int ndx, int dim) {
 // returns a (const) reference to the value in dimension "dim" from record "ndx"
 const double &Dataset::operator()(int ndx, int dim) const {
 #   ifdef DEBUG
-    assert(ndx < n); 
-    assert(dim < d); 
+    assert(ndx < n);
+    assert(dim < d);
 #   endif
     return data[ndx * d + dim];
 }
@@ -93,3 +94,10 @@ Dataset const &Dataset::operator=(Dataset const &x) {
     return *this;
 }
 
+void Dataset::binwrite(const std::string fn) {
+    //FILE* file = fopen (fn.c_str(), "w+b");
+    std::fstream file;
+    file = std::fstream(fn, std::ios::out | std::ios::binary);
+    file.write((char*)data, nd*sizeof(double));
+    file.close();
+}

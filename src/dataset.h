@@ -28,7 +28,7 @@ class Dataset {
 
         // construct a dataset of a particular size, and determine whether to
         // keep the sumDataSquared
-        Dataset(int aN, int aD, bool keepSDS = false) : n(aN), d(aD), nd(n * d), 
+        Dataset(int aN, int aD, bool keepSDS = false) : n(aN), d(aD), nd(n * d),
                                       data(new double[nd]),
                                       sumDataSquared(keepSDS ?  new double[n] : NULL) {}
 
@@ -37,7 +37,7 @@ class Dataset {
 
         // destroys the dataset safely
         ~Dataset() {
-            n = d = nd = 0; 
+            n = d = nd = 0;
             double *dp = data, *sdsp = sumDataSquared;
             data = sumDataSquared = NULL;
             delete [] dp;
@@ -72,13 +72,15 @@ class Dataset {
         double *data;
 
         // sumDataSquared is an (optional) sum of squared values for every
-        // record. Thus, 
+        // record. Thus,
         //  sumDataSquared[0] = data[0]^2 + data[1]^2 + ... + data[d-1]^2
         //  sumDataSquared[1] = data[d]^2 + data[d+1]^2 + ... + data[2*d-1]^2
         // and so on. Note that this is the *intended* use of the sumDataSquared
         // field, but that the Dataset class does NOT automatically populate or
         // update the values in sumDataSquared.
         double *sumDataSquared;
+
+        void binwrite(const std::string fn);
 };
 
 #endif

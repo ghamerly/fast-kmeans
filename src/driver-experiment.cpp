@@ -18,6 +18,7 @@
  * annulus
  * compare
  * sort
+ * mti
  *
  * There are a number of shorthand alternatives,
  * e.g. init for initialize, data for dataset
@@ -43,6 +44,7 @@
 #include "drake_kmeans.h"
 #include "naive_kmeans.h"
 #include "elkan_kmeans.h"
+#include "mti_kmeans.h"
 #include "compare_kmeans.h"
 #include "sort_kmeans.h"
 #include "heap_kmeans.h"
@@ -203,6 +205,8 @@ int main(int argc, char **argv) {
             algorithm = new AnnulusKmeans();
         } else if (command == "elkan") {
             algorithm = new ElkanKmeans();
+        } else if (command == "mti") {
+            algorithm = new MTIKmeans();
         } else if (command == "drake") {
             // Read the number of bounds
             int b;
@@ -281,7 +285,7 @@ int main(int argc, char **argv) {
         }
 
         if (algorithm) {
-            execute(command, algorithm, x, k, assignment, 
+            execute(command, algorithm, x, k, assignment,
                     outAssignment, outCenters,
                     xcNdx, numThreads, maxIterations, &numItersHistory
                     #ifdef MONITOR_ACCURACY
