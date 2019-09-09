@@ -22,7 +22,7 @@ class MTIKmeans : public TriangleInequalityBaseKmeans {
         void update_bounds(int startNdx, int endNdx);
 
         // Keep track of the distance (divided by 2) between each pair of
-        // points.
+        // centers
         double *centerCenterDistDiv2;
 };
 

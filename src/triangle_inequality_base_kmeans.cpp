@@ -14,9 +14,7 @@ void TriangleInequalityBaseKmeans::free() {
     OriginalSpaceKmeans::free();
     delete [] s;
     delete [] upper;
-
-    if (lower)
-        delete [] lower;
+    delete [] lower;
 
     s = NULL;
     upper = NULL;
