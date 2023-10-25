@@ -48,6 +48,9 @@
 #include "heap_kmeans.h"
 #include "naive_kernel_kmeans.h"
 #include "elkan_kernel_kmeans.h"
+#include "sample_kmeans.h"
+#include "annealing_elkan_kmeans.h"
+#include "annealing_hamerly_kmeans.h"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -57,7 +60,23 @@
 #include <ctime>
 #include <unistd.h>
 #include <cstdlib>
+#include <random>
+#include <chrono>
+#include <algorithm>
 
+
+double PointPointDistance3(double* p1, double* p2, double* p3){
+    double temp = 0;
+    while(p1 != p2){
+        double t = *p1++ - *p3++;
+        temp = temp + t * t;
+    }
+    return temp;
+}
+
+
+
+double getDistortion(Dataset const *x, unsigned short *assignment, Dataset *centers);
 void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned short k, unsigned short const *assignment,
         unsigned short *outAssignment, Dataset *outCenters,
         int xcNdx, int numThreads, int maxIterations,
@@ -68,8 +87,20 @@ void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned 
         );
 
 int main(int argc, char **argv) {
+    //std::ifstream in(argv[1]);
+    //std::streambuf *cinbuf = std::cin.rdbuf(); //save old buf
+    //std::cin.rdbuf(in.rdbuf()); //redirect std::cin to in.txt!
+    //std::ofstream out(argv[2]);
+    //std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+    //std::cout.rdbuf(out.rdbuf()); //redirect std::cout to out.txt!
     // The set of data points; the set of centers
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::duration;
+    using std::chrono::milliseconds;
+
     Dataset *x = NULL;
+    Dataset *sample = NULL;
     unsigned short *assignment = NULL;
     unsigned short k;
     unsigned short *outAssignment = NULL;
@@ -224,13 +255,19 @@ int main(int argc, char **argv) {
             if (k <= b) b = k - 1;
 
             algorithm = new DrakeKmeans(b);
+        } else if (command == "sampling"){
+            algorithm = new SampleKmeans();
         } else if (command == "compare") {
             algorithm = new CompareKmeans();
         } else if (command == "sort") {
             algorithm = new SortKmeans();
         } else if (command == "heap") {
             algorithm = new HeapKmeans();
-        } else if (command == "kernel" || command == "elkan_kernel") {
+        } else if (command == "anelkan") {
+            algorithm = new AnnealingElkanKmeans();
+        } else if (command == "anhamerly") {
+            algorithm = new AnnealingHamerlyKmeans();
+        }  else if (command == "kernel" || command == "elkan_kernel") {
             std::string kernelType;
             std::cin >> kernelType;
             Kernel const *kernel = NULL;
@@ -274,7 +311,7 @@ int main(int argc, char **argv) {
             } else {
                 std::cerr << "Error: no centers available" << std::endl;
             }
-        } else if (command == "quit" || command == "exit") {
+        }else if (command == "quit" || command == "exit") {
             break;
         } else {
             std::cerr << "Unrecognized command: <" << command << ">." << std::endl;
@@ -288,6 +325,7 @@ int main(int argc, char **argv) {
                     , &sseHistory
                     #endif
                    );
+            std::cout << std::fixed << getDistortion(x, outAssignment, outCenters) << std::endl;
             delete algorithm;
             algorithm = NULL;
         }
@@ -309,6 +347,7 @@ void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned 
         , std::vector<double> *sseHistory
         #endif
         ) {
+
     // Check for missing initialization
     if (assignment == NULL) {
         std::cerr << "initialize centers first!" << std::endl;
@@ -393,3 +432,15 @@ void execute(std::string command, Kmeans *algorithm, Dataset const *x, unsigned 
         delete [] workingAssignment;
 }
 
+double getDistortion(Dataset const *x, unsigned short *assignment, Dataset *centers){
+    double result = 0.0;
+    for(int i = 0; i < x->n; i++){
+        double temp = 0;
+        for(int j = 0; j < x->d; j++){
+            temp = temp + (x->data[i * x->d + j] - centers->data[assignment[i] * x->d + j]) *
+                          (x->data[i * x->d + j] - centers->data[assignment[i] * x->d + j]);
+        }
+        result = result + temp;
+    }
+    return result / x->n;
+}
